@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macierz oceny ryzyk</title>
+    <link rel="stylesheet" href="riskStyle.css">
+</head>
+<body>
+    <div class="instructions">Oceń poniższe ryzyko przesuwając punkt na odpowiednie miejsce macierzy ryzyk:</div>
+	<div id="riskDescription" class="instructions"></div>
+	<div id="matrix-container">
+        <canvas id="riskMatrix" width="400" height="400"></canvas>
+    </div>
+	<div id="draggableRisk" draggable="true">🔴</div>
+    <button id="submitRisk" class="actions action">Zatwierdź i przejdź do kolejnego ryzyka</button>
+    <script src="classicRiskCode.js"></script>
+</body>
+</html>

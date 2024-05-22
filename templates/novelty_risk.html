@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>URANUS</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
+</head>
+<body>
+<form action="/set_priority" method="post">
+<div class="outercontainer">
+	<div class="instructions">Compare the <b>{{ p_names[c] }}</b> of the following risks by selecting the appropriate key.</div>
+	<div class="container">
+	  <div class="item item_a">{{ e_names[a] }}</div>
+	  <div class="actions">
+		<div><button class="action" type="submit" name="choice" value="1"> &lt; </button></div>
+		<div><button class="action" type="submit" name="choice" value="2"> &gt; </button></div>
+	  </div>
+	  <div class="item item_b">{{ e_names[b] }}</div>
+	</div>
+</div>
+</form>
+</body>
+</html>

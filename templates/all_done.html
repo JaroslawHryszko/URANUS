@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>URANUS</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
+</head>
+<body>
+<div class="intro-container">
+    <h1>Matching completed!</h1>.
+    <p>All risks have been processed. Ordered list of risks:</p>
+    <ul>
+        {% for item in prioritized_list %}
+            {{ item }}<br>
+        {% endfor %}
+    </ul>
+</div>
+</body>
+</html>
