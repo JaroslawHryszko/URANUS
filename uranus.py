@@ -281,3 +281,13 @@ class Uranus:
             return self.final_list
         else:
             return []
+            
+    def reset(self):
+        self.num_comparisons = 0
+        self.final_list = []
+        self.prioritized = [[] for _ in range(len(self.p_names))]
+        self.next_elem = None
+        self.next_parameter = None
+        self.next_range = []
+        self.log("Reset complete")
+

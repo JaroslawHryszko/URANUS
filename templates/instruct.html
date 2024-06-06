@@ -5,37 +5,47 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
 </head>
 <body>
-    <div class="intro-container">
-<h1>Risk assessment tool</h1>
-<p>
-Your task in this experiment will be to perform a risk assessment for the ERP system that is to be built for the Jagiellonian University.
-</p>
-<p>
-Enterprise Resource Planning (ERP) system is a comprehensive software that provides a wide range of operations and processes in order to give a general view of the information and the general structure of the IT. The aim of the ERP system is to integrate information and its flow in the form of a database and architecting common information and standards across all parts of the organization including human and financial resources, supply chain and customer relationship management relying on a process-oriented approach throughout the
-organization. It provides a smooth flow of information between different sections of the organization. The system makes use of information technology and allows data and information sharing within the organization and gives it to users who need them in a desired manner and in a good time. The ERP system enables organizations to manage the effectiveness and efficiency of resource use.
-</p>
-<p>
-You are asked to perform a risk analysis for a new ERP system which will be developed by your company and implemented in Jagiellonian University which has ca. 33000 students, 1500 PhD students, 4800 academic employees and 4000 other employees. The system must cover areas & processes such as: finance, budgetary accounting, HR, payroll, controlling, scientific research, student service, fixed assets. The system will be based on the standard implementation of the ERP system that your company developed some time ago. The system may need to be adjusted to the specific needs of the Jagiellonian University.
-</p>
-<p>
-15 project risks have been already identified. Your task is to assess these risks. For each risk you will have to assess two parameters: risk PROBABILITY and risk IMPACT. Risk probability is the likelihood of the occurrence of a given risk. Risk impact is the potential consequence or damage that a problem can cause if it occurs.
-</p>
-<p>
-The assessment procedure will be as follows: you will be asked a series of questions. Each question will ask you about risk probability (or impact) of two out of 15 identified risks. Your task will be to decide, which of these two risks has higher probability (or impact). Based on your answers the final ordering of the risks will be done automatically. At the end, your results will be compared with the real project in which this assessment has been actually done. You will be informed how similar your risk assessment is to the real one.
-</p>
-<p>
-Meaning of some terms used in risk descriptions:
-organization - Jagiellonian University
-top management - top management from both your IT house and Jagiellonian University
-consultant - an expert from Jagiellonian University who can help developers in answering questions about business processes in Jagiellonian University
-key user - an employee in Jagiellonian University who is responsible for a given business area (e.g., bursar, chancellor, dean, head of department etc.)
-end user - any user who will be using the system (e.g., scientist, secretary, student, etc.)
-</p>
-        </ul>
-        <div class="button-container">
-            <button onclick="location.href='{{ url_for('novelty_risk') }}'">Compare risks</button>
-            <button onclick="location.href='{{ url_for('classic_risk') }}'">Use classic approach</button>
-        </div>
-    </div>
+<div class="intro-container">
+	<h1>An risk assessment experiment, with (or without) the URANUS tool</h1>
+	<p>
+	Your task in this experiment is to perform a risk assessment for the hipothetical software ERP system that is to be built for the Jagiellonian University.
+	</p>
+	<p>
+	ERP (Enterprise Resource Planning) system is a comprehensive software that provides a wide range of operations and processes in order to give a general view of the information and the general structure of the IT. 
+	The aim of the ERP system is to integrate information and its flow in the form of a database and architecting common information and standards across all parts of the organization including human and financial resources, supply chain and customer relationship management relying on a process-oriented approach throughout the organization.
+	It provides a smooth flow of information between different sections of the organization. 
+	The system makes use of information technology and allows data and information sharing within the organization and gives it to users who need them in a desired manner and in a good time. 
+	The ERP system enables organizations to manage the effectiveness and efficiency of resource use.
+	</p>
+	<p>
+	You are asked to perform a risk analysis for a new ERP system which will be developed by your company and implemented in Jagiellonian University which has ca. 33000 students, 1500 PhD students, 4800 academic employees and 4000 other employees. The system must cover areas and processes such as: finance, budgetary accounting, HR, payroll, controlling, scientific research, student service, fixed assets. The system will be based on the standard implementation of the ERP system that your company developed some time ago. The system may need to be adjusted to the specific needs of the Jagiellonian University.
+	</p>
+	<p>
+	Fiveteen project risks have been already identified. Your task is to assess these risks. For each risk you will have to assess two parameters: risk PROBABILITY and risk IMPACT. Risk probability is the likelihood of the occurrence of a given risk. Risk impact is the potential consequence or damage that a problem can cause if it occurs.
+	</p>
+	<p>
+	You can choose between URANUS-based assessment procedure and the 'classic' approach to the risk assessment.
+	</p>
+	<p>
+	<b>The URANUS-based assessment procedure</b> will be as follows: you will be asked a series of questions. Each question will ask you about risk probability (or impact) of two out of 15 identified risks. Your task will be to decide, which of these two risks has higher probability (or impact). Based on your answers the final ordering of the risks will be done automatically and saved into the database for future research. 
+	</p>
+	<p>
+	If you choose <b>The 'classic' approach</b> to the risk assessment, you will be asked to assign each risk a numerical rating (ranging from 1 to 15) for its impact and probability by completing an online form. 
+	<p>
+	Later in the research, your results will be compared with the real project in which this assessment has been actually done. We will investigate, how (and why) your risk assessment is similar to the real one.
+	</p>
+	<p>
+	Meaning of some terms used in risk descriptions:<br>
+	<b>organization</b> - Jagiellonian University;<br>
+	<b>top management</b> - top management from both your IT house and Jagiellonian University;<br>
+	<b>consultant</b> - an expert from Jagiellonian University who can help developers in answering questions about business processes in Jagiellonian University;<br>
+	<b>key user</b> - an employee in Jagiellonian University who is responsible for a given business area (e.g., bursar, chancellor, dean, head of department etc.);<br>
+	<b>end user</b> - any user who will be using the system (e.g., scientist, secretary, student, etc.).
+	</p>
+		<div class="button-container">
+			<button onclick="location.href='{{ url_for('novelty_risk') }}'">Compare risks</button>
+			<button onclick="location.href='{{ url_for('classic_risk') }}'">Use classic approach</button>
+		</div>
+</div>
 </body>
 </html>

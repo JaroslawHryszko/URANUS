@@ -1,0 +1,41 @@
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>URANUS</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
+</head>
+
+<body>
+    <h1>Database content for classic approach</h1>
+    <table border="1" style="">
+        <tr style="">
+            <td>ID</td>
+            <td>Start time</td>
+			<td>Stop time</td>
+			<td>User name</td>
+			<td>Risk ID</td>
+		    <td>Risk name</td>
+			<td>Impact</td>
+			<td>Probability</td>
+			<td>Calculated risk</td>
+        </tr>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.starttime }}</td>
+			<td>{{ item.stoptime }}</td>
+			<td>{{ item.username }}</td>
+			<td>{{ item.risk_number }}</td>
+		    <td>{{ item.risk_name }}</td>
+			<td>{{ item.impact }}</td>
+			<td>{{ item.probability }}</td>
+			<td>{{ item.risk_priority }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+		<div class="button-container">
+			<button onclick="location.href='{{ url_for('display_data') }}'">Display comparison data</button>
+			<button onclick="location.href='{{ url_for('index') }}'">Go back to start</button>
+		</div>
+</body>
+</html>

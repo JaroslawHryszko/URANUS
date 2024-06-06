@@ -2,18 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Macierz oceny ryzyk</title>
-    <link rel="stylesheet" href="riskStyle.css">
+    <title>URANUS</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
 </head>
 <body>
-    <div class="instructions">Oceń poniższe ryzyko przesuwając punkt na odpowiednie miejsce macierzy ryzyk:</div>
-	<div id="riskDescription" class="instructions"></div>
-	<div id="matrix-container">
-        <canvas id="riskMatrix" width="400" height="400"></canvas>
-    </div>
-	<div id="draggableRisk" draggable="true">🔴</div>
-    <button id="submitRisk" class="actions action">Zatwierdź i przejdź do kolejnego ryzyka</button>
-    <script src="classicRiskCode.js"></script>
+    <h1>Classic Risk Assessment</h1>
+    <form method="post">
+	<table border="0">
+		<tr>
+            <th>Risk</th>
+            <th>Probability</th>
+			<th>Impact</th>
+        </tr>
+        {% for risk in risks %}
+            <tr>
+                <th>{{ risk }}</th>
+				<th>
+                <input type="number" id="probability_{{ risk }}" name="probability_{{ risk }}" min="1" max="15" step="1" value="1">
+				</th>
+				<th>
+                <input type="number" id="impact_{{ risk }}" name="impact_{{ risk }}" min="1" max="15" step="1" value="1">
+				</th>
+            </tr>
+        {% endfor %}
+		</table>
+        <button type="submit">Submit</button>
+    </form>
 </body>
 </html>
