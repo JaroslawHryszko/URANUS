@@ -1,9 +1,9 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, Response
 from uranus import Uranus
 from waitress import serve
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import json
+import json, csv
 
 app = Flask(__name__)
 
@@ -150,6 +150,22 @@ def display_classic_data():
     items = ClassicRisks.query.all()
     # Przekazywanie rekordów do szablonu HTML
     return render_template('display_classic_data.html', items=items)
+    
+@app.route('/export/csv')
+def export_csv():
+    # Pobranie danych
+    items = PrioritizedItem.query.all()
+    # Utworzenie pliku CSV
+    si = io.StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['ID', 'Content', 'Start Time', 'End Time'])  # Nagłówki kolumn
+    for item in items:
+        cw.writerow([item.id, item.content, item.start_time, item.end_time])
+
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 if __name__ == "__main__":
     with app.app_context():
