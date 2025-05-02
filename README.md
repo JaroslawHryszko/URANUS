@@ -82,8 +82,9 @@ This Flask-based web application allows users to participate in a research study
 
 ## License
 
-[Specify license information here]
+This code is distributed under the MIT license.
 
 ## Contributors
 
-[List contributors here]
+Jarosław Hryszko - jaroslaw.hryszko@uj.edu.pl
+Adam Roman - adam.roman@uj.edu.pl
