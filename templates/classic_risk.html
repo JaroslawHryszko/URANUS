@@ -1,10 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}Classic Risk Assessment{% endblock %}
+{% block title %}Classic Risk Assessment (FMEA Style){% endblock %}
 
 {% block content %}
-<h1>Classic Risk Assessment</h1>
+<h1>Classic Risk Assessment (FMEA Style)</h1>
 <p>Please evaluate the following risks in terms of probability and impact (on a scale from 1 to 5):</p>
+
+<div class="legend">
+    <p><strong>Legend:</strong></p>
+    <ul>
+        <li>1 = Lowest (Very Low)</li>
+        <li>2 = Low</li>
+        <li>3 = Medium</li>
+        <li>4 = High</li>
+        <li>5 = Highest (Very High)</li>
+    </ul>
+</div>
 
 <form action="{{ url_for('classic_risk') }}" method="post">
     <table>
@@ -21,6 +32,7 @@
                 <td>{{ risk }}</td>
                 <td>
                     <select name="probability_{{ risk }}" required>
+                        <option value="">Select probability...</option>
                         <option value="1">1 - Very Low</option>
                         <option value="2">2 - Low</option>
                         <option value="3">3 - Medium</option>
@@ -30,6 +42,7 @@
                 </td>
                 <td>
                     <select name="impact_{{ risk }}" required>
+                        <option value="">Select impact...</option>
                         <option value="1">1 - Very Low</option>
                         <option value="2">2 - Low</option>
                         <option value="3">3 - Medium</option>

@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, redirect, url_for, Response, session, flash
-from uranus import Uranus
+from uranus import Uranus, CustomError
 from waitress import serve
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -115,7 +115,7 @@ start_time = datetime.now()
 def admin():
     if request.method == 'POST':
         password = request.form.get('password').encode('utf-8')
-        if bcrypt.checkpw(password, admin_password.encode('utf-8')):
+        if bcrypt.checkpw(password, PASSWORD_HASH):
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
         else:
@@ -223,13 +223,21 @@ def novelty_risk():
         db.session.add(result)
         db.session.commit()
         print(f"Saving to NoveltyResults: user_id={user_id}, risk_a_id={a}, risk_b_id={b}, chosen_risk={chosen}")
-        u.set_priority(choice)
+        try:
+            u.set_priority(choice)
+        except CustomError as e:
+            flash(str(e), 'danger')
+            return render_template('all_done.html', values=values)
         start_time = stop_time
-    a, b, c = u.next_to_process()
-    if a is None or b is None or c is None:
-        u.reset()
+    try:
+        a, b, c = u.next_to_process()
+        if a is None or b is None or c is None:
+            u.reset()
+            return render_template('all_done.html', values=values)
+        return render_template('novelty_risk.html', a=a, b=b, c=c, p_names=u.p_names, e_names=u.e_names)
+    except CustomError as e:
+        flash(str(e), 'danger')
         return render_template('all_done.html', values=values)
-    return render_template('novelty_risk.html', a=a, b=b, c=c, p_names=u.p_names, e_names=u.e_names)
 
     
 @app.route('/', methods=['GET', 'POST'])
@@ -270,10 +278,22 @@ def classic_risk():
 
     if request.method == 'POST':
         stop_time = datetime.now()
-
+        
+        # Validate that all fields are filled
+        missing_fields = False
         for risk in values:
-            assessed_probability = int(request.form.get(f'probability_{risk}', 0))
-            assessed_impact = int(request.form.get(f'impact_{risk}', 0))
+            if not request.form.get(f'probability_{risk}') or not request.form.get(f'impact_{risk}'):
+                missing_fields = True
+                break
+                
+        if missing_fields:
+            flash('Please fill in all fields for probability and impact', 'danger')
+            return render_template('classic_risk.html', risks=values)
+        
+        # Process the form data if all fields are filled
+        for risk in values:
+            assessed_probability = int(request.form.get(f'probability_{risk}'))
+            assessed_impact = int(request.form.get(f'impact_{risk}'))
             calculated_assessment = assessed_probability * assessed_impact
 
             # Save the result to the database
