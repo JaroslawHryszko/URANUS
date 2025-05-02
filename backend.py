@@ -7,16 +7,23 @@ import json, csv
 import uuid
 import pandas as pd
 import bcrypt
+import os
+from dotenv import load_dotenv
 from functools import wraps
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
-app.secret_key = 'SyagheKrRg3eygnoBfoEMybFzN90XJtG' 
-PASSWORD_HASH = bcrypt.hashpw(b"rowerjestbardzookej", bcrypt.gensalt())
+# Set default values if environment variables are not set
+app.secret_key = os.getenv('SECRET_KEY')
+admin_password = os.getenv('ADMIN_PASSWORD')
+PASSWORD_HASH = bcrypt.hashpw(admin_password.encode('utf-8'), bcrypt.gensalt())
 
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -108,7 +115,7 @@ start_time = datetime.now()
 def admin():
     if request.method == 'POST':
         password = request.form.get('password').encode('utf-8')
-        if bcrypt.checkpw(password, PASSWORD_HASH):
+        if bcrypt.checkpw(password, admin_password.encode('utf-8')):
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
         else:
@@ -301,7 +308,36 @@ def reset():
 
 
 if __name__ == "__main__":
+    # Load environment variables
+    load_dotenv()
+    
+    # Print environment variables for debugging
+    print("Environment variables loaded:")
+    print(f"DATABASE_URI: {os.getenv('DATABASE_URI')}")
+    print(f"HOST: {os.getenv('HOST')}")
+    print(f"PORT: {os.getenv('PORT')}")
+    
+    # Create database tables if they don't exist
     with app.app_context():       
         db.create_all()  
-        #app.run(debug=True, host="0.0.0.0", port=80)
-        serve(app, host="127.0.0.1", port=80)
+    
+    # Get host and port from environment variables with defaults
+    host = os.getenv('HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', 5000))
+    print(f"Starting server at http://{host}:{port}")
+    
+    # Determine if we are in development or production mode
+    debug_mode = os.getenv('FLASK_ENV') == 'development'
+    
+    # Use appropriate server
+    if debug_mode:
+        # Development server with debugging
+        app.run(debug=True, host=host, port=port)
+    else:
+        # Production server with waitress
+        try:
+            serve(app, host=host, port=port)
+        except Exception as e:
+            print(f"Error starting server: {e}")
+            print("Falling back to Flask development server...")
+            app.run(debug=True, host=host, port=port)
