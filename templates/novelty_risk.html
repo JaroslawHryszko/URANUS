@@ -1,24 +1,29 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>URANUS</title>
-	<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
-</head>
-<body>
-<form action="/set_priority" method="post">
-<div class="outercontainer">
-	<div class="instructions">Compare the <b>{{ p_names[c] }}</b> of the following risks by selecting the appropriate button (&lt; or &gt;).</div>
-	<div class="container">
-	  <div class="item item_a">{{ e_names[a] }}</div>
-	  <div class="actions">
-		<div><button class="action" type="submit" name="choice" value="0"> &lt; </button></div>
-		<div><button class="action" type="submit" name="choice" value="1"> &gt; </button></div>
-	  </div>
-	  <div class="item item_b">{{ e_names[b] }}</div>
-	</div>
+{% extends "base.html" %}
+
+{% block title %}Novel Risk Assessment{% endblock %}
+
+{% block content %}
+<h1>Comparison-based Risk Assessment</h1>
+<p>Compare the following risks in terms of <strong>{{ p_names[c] }}</strong>:</p>
+
+<div class="comparison">
+    <div class="risk">
+        <h3>Risk A</h3>
+        <p>{{ e_names[a] }}</p>
+    </div>
+    <div class="risk">
+        <h3>Risk B</h3>
+        <p>{{ e_names[b] }}</p>
+    </div>
 </div>
+
+<p>Please select one of the options:</p>
+
+<form action="{{ url_for('novelty_risk') }}" method="post">
+	<input type="hidden" name="a" value="{{ a }}">
+    <input type="hidden" name="b" value="{{ b }}">
+    <input type="hidden" name="c" value="{{ c }}">
+    <button name="choice" value="0" type="submit">Risk A has a <strong>lower</strong> {{ p_names[c] }} than Risk B</button>
+    <button name="choice" value="1" type="submit">Risk A has a <strong>higher</strong> {{ p_names[c] }} than Risk B</button>
 </form>
-</body>
-</html>
+{% endblock %}

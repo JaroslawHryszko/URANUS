@@ -1,32 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>URANUS</title>
-	<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
-</head>
-<body>
-    <h1>Classic Risk Assessment</h1>
-    <form method="post">
-	<table border="0">
-		<tr>
-            <th>Risk</th>
-            <th>Probability</th>
-			<th>Impact</th>
-        </tr>
-        {% for risk in risks %}
+{% extends "base.html" %}
+
+{% block title %}Classic Risk Assessment{% endblock %}
+
+{% block content %}
+<h1>Classic Risk Assessment</h1>
+<p>Please evaluate the following risks in terms of probability and impact (on a scale from 1 to 5):</p>
+
+<form action="{{ url_for('classic_risk') }}" method="post">
+    <table>
+        <thead>
             <tr>
-                <th>{{ risk }}</th>
-				<th>
-                <input type="number" id="probability_{{ risk }}" name="probability_{{ risk }}" min="1" max="15" step="1" value="1">
-				</th>
-				<th>
-                <input type="number" id="impact_{{ risk }}" name="impact_{{ risk }}" min="1" max="15" step="1" value="1">
-				</th>
+                <th>Risk</th>
+                <th>Probability (1-5)</th>
+                <th>Impact (1-5)</th>
             </tr>
-        {% endfor %}
-		</table>
-        <button type="submit">Submit</button>
-    </form>
-</body>
-</html>
+        </thead>
+        <tbody>
+            {% for index, risk in enumerate(risks) %}
+            <tr>
+                <td>{{ risk }}</td>
+                <td>
+                    <select name="probability_{{ risk }}" required>
+                        <option value="1">1 - Very Low</option>
+                        <option value="2">2 - Low</option>
+                        <option value="3">3 - Medium</option>
+                        <option value="4">4 - High</option>
+                        <option value="5">5 - Very High</option>
+                    </select>
+                </td>
+                <td>
+                    <select name="impact_{{ risk }}" required>
+                        <option value="1">1 - Very Low</option>
+                        <option value="2">2 - Low</option>
+                        <option value="3">3 - Medium</option>
+                        <option value="4">4 - High</option>
+                        <option value="5">5 - Very High</option>
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit">Submit</button>
+</form>
+{% endblock %}

@@ -1,8 +1,8 @@
 Flask
-Jinja2
-Werkzeug
-gunicorn
-itsdangerous
-click
+Flask-SQLAlchemy
+Flask-Bcrypt
 waitress
-flask_sqlalchemy
+Jinja2
+python-dotenv
+bleach
+pandas

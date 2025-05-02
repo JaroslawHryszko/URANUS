@@ -1,27 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>URANUS</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
-</head>
-<body>
-<div class="description-container">
-    <h1>Matching completed!</h1>
-    <p>All risks have been processed.<br>
-	List of risks, ordered according to your choices:</p>
-    <ul>
-        {% for item in prioritized_list %}
-            {{ item }}.{{ values[item] }}<br>
-        {% endfor %}
-    </ul>
-	<p>Above list has been saved into the database.<br>
-	Thank you for participating in our experiment.<br>
-	You can leave this site or use other approach to risk assessment.<br>
-	Have a nice day!</p>
-	<div class="button-container">
-		<button onclick="location.href='{{ url_for('reset') }}'">Start from the beginning</button>
-	</div>
-</div>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Assessment Complete{% endblock %}
+
+{% block content %}
+<h1>Thank you for participating in the risk assessment experiment!</h1>
+
+<p class="mt-20">
+    <a href="{{ url_for('index') }}" class="btn">Return to Home Site</a>
+</p>
+{% endblock %}

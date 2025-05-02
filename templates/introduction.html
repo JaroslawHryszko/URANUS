@@ -1,16 +1,23 @@
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>URANUS</title>
-	<link rel="stylesheet" href="{{ url_for('static', filename='riskStyle.css') }}">
-</head>
-<body>
-    <h1>Welcome to URANUS: Ultra-light Risk ANalysis Using Stepwise comparison!</h1>
-	<img src="{{ url_for('static', filename='uranus.gif') }}">
-    <form method="post">
-        <label for="name">Introduce yourself: </label>
-        <input type="text" id="name" name="name" required>
-        <button type="submit">Submit</button>
-    </form>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Introduction{% endblock %}
+
+{% block content %}
+<h1>Welcome to the URANUS Experiment!</h1>
+{% for paragraph in welcome_text %}
+    <p>{{ paragraph|safe }}</p>
+	<br>
+{% endfor %}
+{% if user_name == "NULL" %}
+<p></p>
+<form action="{{ url_for('index') }}" method="post">
+    <label for="name">If you want to try, just simply enter your name (or nickname):</label>
+    <input type="text" id="name" name="name" required>
+    <button type="submit">Start</button>
+</form>
+{% else %}
+<p class="mt-20">
+    <a href="{{ url_for('instruct') }}" class="btn">Try again?</a>
+</p>
+{% endif %}
+{% endblock %}

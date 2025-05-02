@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Interaction Logs{% endblock %}
+
+{% block content %}
+<h1>Interaction Logs</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>User ID</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Interaction Type</th>
+            <th>Result</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.user_id }}</td>
+            <td>{{ log.start_time }}</td>
+            <td>{{ log.end_time }}</td>
+            <td>{{ log.interaction_type }}</td>
+            <td><pre>{{ log.result }}</pre></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
