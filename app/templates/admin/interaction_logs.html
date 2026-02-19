@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Interaction Logs — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Interaction Logs: {{ experiment.name }}</h2>
+    <div>
+        <a href="{{ url_for('admin.interactions_export', experiment_id=experiment.id, format='csv') }}"
+           class="btn btn-outline-primary btn-sm">Export CSV</a>
+        <a href="{{ url_for('admin.interactions_export', experiment_id=experiment.id, format='json') }}"
+           class="btn btn-outline-primary btn-sm">Export JSON</a>
+        <a href="{{ url_for('admin.experiment_edit', experiment_id=experiment.id) }}"
+           class="btn btn-outline-secondary btn-sm ms-2">Back</a>
+    </div>
+</div>
+
+<!-- Filters -->
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-3">
+        <select class="form-select" name="session_id">
+            <option value="">All Sessions</option>
+            {% for s in sessions %}
+            <option value="{{ s.id }}" {{ 'selected' if session_filter == s.id }}>Session #{{ s.id }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" name="event_type">
+            <option value="">All Event Types</option>
+            {% for et in event_types %}
+            <option value="{{ et }}" {{ 'selected' if event_type_filter == et }}>{{ et }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+</form>
+
+<p class="text-muted">Showing {{ events|length }} of {{ total }} events (page {{ page }})</p>
+
+{% if events %}
+<div class="table-responsive">
+    <table class="table table-sm table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Session</th>
+                <th>Timestamp</th>
+                <th>Type</th>
+                <th>Element</th>
+                <th>Page</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for evt in events %}
+            <tr>
+                <td>{{ evt.id }}</td>
+                <td>{{ evt.session_id }}</td>
+                <td>{{ '%.1f'|format(evt.timestamp) }}ms</td>
+                <td><span class="badge bg-secondary">{{ evt.event_type }}</span></td>
+                <td>
+                    {% if evt.element_id %}<code>#{{ evt.element_id }}</code>{% endif %}
+                    {{ evt.element_tag }}
+                    {% if evt.element_class %}<small>.{{ evt.element_class[:30] }}</small>{% endif %}
+                </td>
+                <td><small>{{ evt.page_url[-40:] if evt.page_url else '' }}</small></td>
+                <td><small>{{ evt.event_data[:100] if evt.event_data else '' }}</small></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+<nav>
+    <ul class="pagination">
+        {% if page > 1 %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page - 1 }}&session_id={{ session_filter or '' }}&event_type={{ event_type_filter or '' }}">Previous</a>
+        </li>
+        {% endif %}
+        {% set total_pages = (total / per_page)|round(0, 'ceil')|int %}
+        {% for p in range(1, total_pages + 1) %}
+        {% if p <= 10 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+        <li class="page-item {{ 'active' if p == page }}">
+            <a class="page-link" href="?page={{ p }}&session_id={{ session_filter or '' }}&event_type={{ event_type_filter or '' }}">{{ p }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% if page < total_pages %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page + 1 }}&session_id={{ session_filter or '' }}&event_type={{ event_type_filter or '' }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% else %}
+<div class="alert alert-info">No interaction events recorded yet.</div>
+{% endif %}
+{% endblock %}

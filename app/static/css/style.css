@@ -1,0 +1,38 @@
+/* Custom styles for URANUS v3 */
+
+.comparison-card {
+    transition: box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.comparison-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.sortable-list .list-group-item {
+    cursor: default;
+}
+
+.sortable-list .list-group-item span[style*="cursor: grab"] {
+    font-size: 1.2em;
+}
+
+.budget-slider {
+    width: 100%;
+}
+
+.font-monospace {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85em;
+}
+
+/* Iframe-friendly: ensure no overflow issues */
+body {
+    overflow-x: hidden;
+}
+
+/* Progress bar text */
+.progress-bar {
+    font-weight: 600;
+    font-size: 0.9em;
+}

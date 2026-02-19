@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Results — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Results: {{ experiment.name }}</h2>
+    <div>
+        <a href="{{ url_for('admin.results_export', experiment_id=experiment.id, format='csv') }}"
+           class="btn btn-outline-primary">Export CSV</a>
+        <a href="{{ url_for('admin.results_export', experiment_id=experiment.id, format='json') }}"
+           class="btn btn-outline-primary">Export JSON</a>
+        <a href="{{ url_for('admin.experiment_edit', experiment_id=experiment.id) }}"
+           class="btn btn-outline-secondary ms-2">Back</a>
+    </div>
+</div>
+
+{% if results_data %}
+{% for item in results_data %}
+<div class="card mb-3">
+    <div class="card-header">
+        <strong>{{ item.method.display_name }}</strong>
+        {% if item.participant %}
+        — <em>{{ item.participant.name }}</em>
+        {% endif %}
+        <span class="badge bg-info ms-2">{{ item.method.method_type }}</span>
+        {% if item.method_session.completed_at %}
+        <small class="text-muted ms-2">{{ item.method_session.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% set summary = item.summary %}
+        {% if summary.type == 'ranking' %}
+        <table class="table table-sm">
+            <thead><tr><th>Rank</th><th>Risk</th></tr></thead>
+            <tbody>
+            {% for r in summary.ranking %}
+            <tr><td>{{ r.rank }}</td><td>{{ r.risk }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <small class="text-muted">Comparisons made: {{ summary.num_comparisons }}</small>
+
+        {% elif summary.type == 'matrix' %}
+        <table class="table table-sm">
+            <thead><tr><th>Risk</th><th>Values</th><th>Priority</th></tr></thead>
+            <tbody>
+            {% for r in summary.results %}
+            <tr>
+                <td>{{ r.risk }}</td>
+                <td>{{ r.criteria_values }}</td>
+                <td><strong>{{ r.priority }}</strong></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        {% elif summary.type in ('ranking', 'budget', 'categorization') %}
+        <table class="table table-sm">
+            <thead><tr><th>Risk</th>
+                {% if summary.type == 'budget' %}<th>Points</th>{% endif %}
+                {% if summary.type == 'categorization' %}<th>Category</th>{% endif %}
+                {% if summary.type == 'ranking' %}<th>Rank</th>{% endif %}
+                <th>Parameter</th>
+            </tr></thead>
+            <tbody>
+            {% for r in summary.results %}
+            <tr>
+                <td>{{ r.risk }}</td>
+                {% if summary.type == 'budget' %}<td>{{ r.points }}</td>{% endif %}
+                {% if summary.type == 'categorization' %}<td>{{ r.category }}</td>{% endif %}
+                {% if summary.type == 'ranking' %}<td>{{ r.rank }}</td>{% endif %}
+                <td>{{ r.parameter }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        {% elif summary.type == 'in_progress' %}
+        <p class="text-muted">In progress — {{ summary.comparisons_made }} comparisons made so far.</p>
+
+        {% else %}
+        <pre>{{ summary }}</pre>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-info">No results yet.</div>
+{% endif %}
+{% endblock %}

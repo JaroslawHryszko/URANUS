@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Welcome — URANUS{% endblock %}
+
+{% block content %}
+{% if experiment %}
+<h1>{{ experiment.name }}</h1>
+{% if experiment.welcome_text %}
+<div class="mb-4">{{ experiment.welcome_text|safe }}</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <form action="{{ url_for('experiment.start', experiment_id=experiment.id) }}" method="post">
+            <div class="mb-3">
+                <label for="name" class="form-label">Enter your name or nickname to begin:</label>
+                <input type="text" class="form-control" id="name" name="name" required maxlength="255">
+            </div>
+            <button type="submit" class="btn btn-primary">Start Experiment</button>
+        </form>
+    </div>
+</div>
+
+{% elif experiments %}
+<h1>Available Experiments</h1>
+<div class="row">
+    {% for exp in experiments %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ exp.name }}</h5>
+                {% if exp.description %}
+                <p class="card-text">{{ exp.description }}</p>
+                {% endif %}
+                <a href="{{ url_for('experiment.welcome', experiment_id=exp.id) }}" class="btn btn-primary">Start</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<h1>Welcome to URANUS</h1>
+<p>No active experiments at this time. Please check back later.</p>
+{% endif %}
+{% endblock %}

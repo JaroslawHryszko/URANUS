@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Choose Methods — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<h2>Choose Assessment Methods</h2>
+<p>Select the methods you would like to use for this experiment:</p>
+
+<form method="post">
+    {% for method in methods %}
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="methods" value="{{ method.id }}"
+               id="method_{{ method.id }}">
+        <label class="form-check-label" for="method_{{ method.id }}">
+            <strong>{{ method.display_name }}</strong>
+            {% if method.instructions %}
+            <br><small class="text-muted">{{ method.instructions[:200] }}{% if method.instructions|length > 200 %}...{% endif %}</small>
+            {% endif %}
+        </label>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Continue</button>
+</form>
+{% endblock %}

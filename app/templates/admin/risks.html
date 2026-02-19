@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Risks — {{ experiment.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Risks: {{ experiment.name }}</h2>
+    <a href="{{ url_for('admin.experiment_edit', experiment_id=experiment.id) }}" class="btn btn-outline-secondary">Back to Experiment</a>
+</div>
+
+<!-- Add Single Risk -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Add Risk</h5></div>
+    <div class="card-body">
+        <form method="post" class="row g-2 align-items-end">
+            <input type="hidden" name="action" value="add">
+            <div class="col-md-5">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-control" name="risk_name" required>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Description (optional)</label>
+                <input type="text" class="form-control" name="risk_description">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bulk Add -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <a class="text-decoration-none" data-bs-toggle="collapse" href="#bulkAdd">Bulk Add Risks</a>
+        </h5>
+    </div>
+    <div class="collapse" id="bulkAdd">
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" name="action" value="bulk_add">
+                <div class="mb-3">
+                    <label class="form-label">One risk per line:</label>
+                    <textarea class="form-control" name="risks_bulk" rows="8"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add All</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Risk List -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Risks ({{ risks|length }})</h5>
+        <form method="post" id="reorderForm">
+            <input type="hidden" name="action" value="reorder">
+            <input type="hidden" name="risk_order" id="riskOrder">
+            <button type="submit" class="btn btn-sm btn-outline-primary" id="saveOrderBtn" style="display:none;">
+                Save Order
+            </button>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <ul class="list-group list-group-flush" id="riskList">
+            {% for risk in risks %}
+            <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ risk.id }}">
+                <div class="d-flex align-items-center">
+                    <span class="me-2" style="cursor: grab;">&#x2630;</span>
+                    <span class="badge bg-secondary me-2">{{ loop.index }}</span>
+                    <div>
+                        <strong>{{ risk.name }}</strong>
+                        {% if risk.description %}<br><small class="text-muted">{{ risk.description }}</small>{% endif %}
+                    </div>
+                </div>
+                <form method="post" class="d-inline" onsubmit="return confirm('Delete this risk?')">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="risk_id" value="{{ risk.id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var list = document.getElementById('riskList');
+    if (!list) return;
+    Sortable.create(list, {
+        handle: 'span[style*="cursor: grab"]',
+        animation: 150,
+        onEnd: function() {
+            document.getElementById('saveOrderBtn').style.display = '';
+            var items = list.querySelectorAll('li[data-id]');
+            var ids = Array.from(items).map(function(el) { return el.dataset.id; });
+            document.getElementById('riskOrder').value = ids.join(',');
+        }
+    });
+});
+</script>
+{% endblock %}

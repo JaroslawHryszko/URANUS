@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Pairwise Comparison — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<h2>{{ method.display_name }}</h2>
+
+{% if done %}
+<div class="alert alert-success">
+    <strong>Assessment complete!</strong> All comparisons have been made.
+</div>
+<a href="{{ url_for('experiment.method_page', experiment_id=experiment.id, method_session_id=method_session.id) }}"
+   class="btn btn-primary">Continue</a>
+{% else %}
+
+<div class="progress mb-4" style="height: 25px;">
+    <div class="progress-bar" role="progressbar" style="width: {{ progress|round(1) }}%"
+         aria-valuenow="{{ progress|round(1) }}" aria-valuemin="0" aria-valuemax="100">
+        {{ progress|round(1) }}%
+    </div>
+</div>
+
+<p class="lead">Which risk has <strong>higher {{ p_names[c] }}</strong>?</p>
+
+<form method="post" id="uranusForm">
+    <input type="hidden" name="a" value="{{ a }}">
+    <input type="hidden" name="b" value="{{ b }}">
+    <input type="hidden" name="c" value="{{ c }}">
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100 comparison-card" data-choice="1">
+                <div class="card-body">
+                    <h5 class="card-title">Risk A</h5>
+                    <p class="card-text">{{ e_names[a] }}</p>
+                </div>
+                <div class="card-footer text-center">
+                    <button type="submit" name="choice" value="1" class="btn btn-outline-primary w-100">
+                        Risk A has higher {{ p_names[c] }}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100 comparison-card" data-choice="0">
+                <div class="card-body">
+                    <h5 class="card-title">Risk B</h5>
+                    <p class="card-text">{{ e_names[b] }}</p>
+                </div>
+                <div class="card-footer text-center">
+                    <button type="submit" name="choice" value="0" class="btn btn-outline-primary w-100">
+                        Risk B has higher {{ p_names[c] }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endif %}
+{% endblock %}

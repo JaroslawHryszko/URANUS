@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Instructions — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<h2>Instructions</h2>
+{% if experiment.instructions %}
+<div class="mb-4">{{ experiment.instructions|safe }}</div>
+{% else %}
+<p>Please follow the on-screen prompts to complete the risk assessment.</p>
+{% endif %}
+
+<a href="{{ url_for('experiment.run_method', experiment_id=experiment.id) }}" class="btn btn-primary btn-lg">
+    Begin Assessment
+</a>
+{% endblock %}

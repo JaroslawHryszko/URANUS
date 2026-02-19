@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Participants — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Participants: {{ experiment.name }}</h2>
+    <a href="{{ url_for('admin.experiment_edit', experiment_id=experiment.id) }}" class="btn btn-outline-secondary">Back to Experiment</a>
+</div>
+
+{% if participants %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>UUID</th>
+                <th>Email</th>
+                <th>Demographics</th>
+                <th>Sessions</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in participants %}
+            <tr>
+                <td><strong>{{ p.name }}</strong></td>
+                <td><code class="small">{{ p.uuid[:8] }}...</code></td>
+                <td>{{ p.email or '-' }}</td>
+                <td>
+                    {% set demo = p.get_demographics() %}
+                    {% if demo %}
+                    <small>{{ demo }}</small>
+                    {% else %}-{% endif %}
+                </td>
+                <td>
+                    {% for s in sessions.get(p.id, []) %}
+                    <span class="badge bg-{{ 'success' if s.completed_at else 'warning' }}">
+                        {{ 'Completed' if s.completed_at else 'In Progress' }}
+                    </span>
+                    {% endfor %}
+                </td>
+                <td>{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">No participants yet.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Ranking — {{ experiment.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.css">
+{% endblock %}
+
+{% block content %}
+<h2>{{ method.display_name }}</h2>
+<p>Drag and drop the risks to rank them from <strong>highest priority</strong> (top) to <strong>lowest priority</strong> (bottom).</p>
+
+<form method="post" id="rankingForm">
+    {% for param in parameters %}
+    {% if mode == 'per_parameter' %}
+    <h4 class="mt-4">Ranking by: {{ param }}</h4>
+    {% endif %}
+
+    <input type="hidden" name="order_{{ param }}" id="order_{{ param }}">
+
+    <ul class="list-group mb-4 sortable-list" id="sortable_{{ param }}" data-param="{{ param }}">
+        {% for risk in risks %}
+        <li class="list-group-item d-flex align-items-center" data-id="{{ risk.id }}">
+            <span class="badge bg-secondary me-3 rank-badge">{{ loop.index }}</span>
+            <span class="me-2" style="cursor: grab;">&#x2630;</span>
+            <div>
+                <strong>{{ risk.name }}</strong>
+                {% if risk.description %}
+                <br><small class="text-muted">{{ risk.description }}</small>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary btn-lg">Submit Ranking</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/ranking.js') }}"></script>
+{% endblock %}

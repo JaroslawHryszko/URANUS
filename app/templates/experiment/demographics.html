@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Demographics — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<h2>About You</h2>
+<p>Please tell us a bit about yourself. This helps us analyze the results.</p>
+
+<form method="post" class="card p-4">
+    {% for field in fields %}
+    <div class="mb-3">
+        <label for="{{ field.name }}" class="form-label">{{ field.label }}</label>
+        {% if field.type == 'select' %}
+        <select class="form-select" id="{{ field.name }}" name="{{ field.name }}"
+                {% if field.required %}required{% endif %}>
+            <option value="">-- Select --</option>
+            {% for opt in field.options %}
+            <option value="{{ opt }}">{{ opt }}</option>
+            {% endfor %}
+        </select>
+        {% elif field.type == 'textarea' %}
+        <textarea class="form-control" id="{{ field.name }}" name="{{ field.name }}" rows="3"
+                  {% if field.required %}required{% endif %}></textarea>
+        {% else %}
+        <input type="{{ field.type or 'text' }}" class="form-control" id="{{ field.name }}"
+               name="{{ field.name }}" {% if field.required %}required{% endif %}>
+        {% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Continue</button>
+</form>
+{% endblock %}

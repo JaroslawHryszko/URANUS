@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Matrix Assessment — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<h2>{{ method.display_name }}</h2>
+<p>Please evaluate each risk on the following criteria:</p>
+
+<form method="post">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th style="min-width: 250px;">Risk</th>
+                    {% for criterion in criteria %}
+                    <th class="text-center" style="min-width: 150px;">
+                        {{ criterion.display_name or criterion.name }}
+                        <br><small class="text-muted">({{ criterion.scale_min }}-{{ criterion.scale_max }})</small>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for risk in risks %}
+                <tr>
+                    <td>
+                        <strong>{{ risk.name }}</strong>
+                        {% if risk.description %}
+                        <br><small class="text-muted">{{ risk.description }}</small>
+                        {% endif %}
+                    </td>
+                    {% for criterion in criteria %}
+                    <td>
+                        <select class="form-select" name="{{ criterion.name }}_{{ risk.id }}" required>
+                            <option value="">Select...</option>
+                            {% for val in range(criterion.scale_min, criterion.scale_max + 1) %}
+                            <option value="{{ val }}">
+                                {{ val }}{% if criterion.labels and criterion.labels[val|string] %} - {{ criterion.labels[val|string] }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button type="submit" class="btn btn-primary btn-lg">Submit Assessment</button>
+</form>
+{% endblock %}

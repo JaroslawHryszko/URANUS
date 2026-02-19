@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Complete — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1>Thank You!</h1>
+    <p class="lead">You have completed the risk assessment experiment.</p>
+    <p>Your responses have been recorded and will be used for research purposes.</p>
+    <p class="mt-4">
+        <a href="{{ url_for('experiment.index') }}" class="btn btn-outline-primary">Return to Home</a>
+    </p>
+</div>
+{% endblock %}

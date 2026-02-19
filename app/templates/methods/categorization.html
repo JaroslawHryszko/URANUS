@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Categorization — {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<h2>{{ method.display_name }}</h2>
+<p>Assign each risk to a category:</p>
+
+<form method="post">
+    {% for param in parameters %}
+    {% if mode == 'per_parameter' %}
+    <h4 class="mt-4">Categorization for: {{ param }}</h4>
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th style="min-width: 250px;">Risk</th>
+                    <th class="text-center">Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for risk in risks %}
+                <tr>
+                    <td>
+                        <strong>{{ risk.name }}</strong>
+                        {% if risk.description %}
+                        <br><small class="text-muted">{{ risk.description }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select class="form-select" name="category_{{ param }}_{{ risk.id }}" required>
+                            <option value="">Select category...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary btn-lg">Submit Categorization</button>
+</form>
+{% endblock %}
