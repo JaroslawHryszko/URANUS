@@ -621,9 +621,14 @@ def session_detail(experiment_id, session_id):
         result_items = []
         for ar in results:
             risk = Risk.query.get(ar.risk_id) if ar.risk_id else None
+            rd = ar.get_result_data()
+            # Enrich uranus final_ranking with risk names
+            if rd.get('type') == 'final_ranking' and 'ranking' in rd:
+                rd['ranking_names'] = [risks[i].name if i < len(risks) else '?' for i in rd['ranking']]
             result_items.append({
                 'risk_name': risk.name if risk else '?',
-                'data': ar.get_result_data()
+                'data': rd,
+                'method_type': method.method_type if method else '',
             })
 
         method_sessions_data.append({

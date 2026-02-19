@@ -73,7 +73,7 @@
             {% for r in summary.results %}
             <tr>
                 <td>{{ r.risk }}</td>
-                <td>{{ r.criteria_values }}</td>
+                <td>{% for k, v in r.criteria_values.items() %}<span class="badge bg-{% if v >= 4 %}danger{% elif v >= 3 %}warning text-dark{% else %}secondary{% endif %} me-1">{{ k }}: {{ v }}</span>{% endfor %}</td>
                 <td><strong>{{ r.priority }}</strong></td>
             </tr>
             {% endfor %}

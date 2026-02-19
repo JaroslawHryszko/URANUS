@@ -184,13 +184,138 @@
             </div>
             {% if msd.results %}
             <div class="card-body p-2">
+                {% set mt = msd.method.method_type if msd.method else '' %}
+                {% if mt == 'matrix' %}
                 <table class="table table-sm result-table mb-0">
                     <thead>
                         <tr>
                             <th>Risk</th>
-                            <th>Result</th>
+                            {% for key in msd.results[0].data.get('criteria_values', {}).keys() %}
+                            <th class="text-center">{{ key|capitalize }}</th>
+                            {% endfor %}
+                            <th class="text-center fw-bold">Priority</th>
                         </tr>
                     </thead>
+                    <tbody>
+                        {% for ri in msd.results %}
+                        <tr>
+                            <td>{{ ri.risk_name }}</td>
+                            {% for key, val in ri.data.get('criteria_values', {}).items() %}
+                            <td class="text-center">
+                                <span class="badge bg-{% if val >= 4 %}danger{% elif val >= 3 %}warning text-dark{% else %}secondary{% endif %}">{{ val }}</span>
+                            </td>
+                            {% endfor %}
+                            <td class="text-center fw-bold">{{ ri.data.get('priority', '') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% elif mt == 'ranking' %}
+                <table class="table table-sm result-table mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width:60px">#</th>
+                            <th>Risk</th>
+                            {% if msd.results[0].data.get('parameter', 'overall') != 'overall' %}
+                            <th>Parameter</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ri in msd.results|sort(attribute='data.rank') %}
+                        <tr>
+                            <td class="text-center">
+                                {% if ri.data.get('rank', 0) <= 3 %}
+                                <span class="badge bg-{% if ri.data.rank == 1 %}danger{% elif ri.data.rank == 2 %}warning text-dark{% else %}info{% endif %}">{{ ri.data.rank }}</span>
+                                {% else %}
+                                {{ ri.data.get('rank', '') }}
+                                {% endif %}
+                            </td>
+                            <td>{{ ri.risk_name }}</td>
+                            {% if ri.data.get('parameter', 'overall') != 'overall' %}
+                            <td><small class="text-muted">{{ ri.data.parameter }}</small></td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% elif mt == 'budget' %}
+                <table class="table table-sm result-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Risk</th>
+                            <th style="width:55%">Allocation</th>
+                            <th class="text-center" style="width:70px">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set max_pts = msd.results|map(attribute='data')|map(attribute='points')|max %}
+                        {% for ri in msd.results|sort(attribute='data.points', reverse=true) %}
+                        <tr>
+                            <td>{{ ri.risk_name }}</td>
+                            <td>
+                                <div class="progress" style="height: 18px;">
+                                    <div class="progress-bar bg-primary" style="width: {{ (ri.data.points / max_pts * 100) if max_pts else 0 }}%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center fw-bold">{{ ri.data.get('points', 0) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% elif mt == 'categorization' %}
+                <table class="table table-sm result-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Risk</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ri in msd.results %}
+                        <tr>
+                            <td>{{ ri.risk_name }}</td>
+                            <td>
+                                {% set cat = ri.data.get('category', '') %}
+                                <span class="badge bg-{% if cat == 'Critical' %}danger{% elif cat == 'High' %}warning text-dark{% elif cat == 'Medium' %}info{% elif cat == 'Low' %}success{% elif cat == 'Negligible' %}secondary{% else %}light text-dark{% endif %}">{{ cat }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% elif mt == 'uranus' %}
+                {% set final = msd.results|selectattr('data.type', 'defined')|selectattr('data.type', 'equalto', 'final_ranking')|list %}
+                {% if final %}
+                <h6 class="px-2 pt-2 mb-1">Final Ranking</h6>
+                <table class="table table-sm result-table mb-0">
+                    <thead><tr><th class="text-center" style="width:60px">#</th><th>Risk</th></tr></thead>
+                    <tbody>
+                        {% for name in final[0].data.get('ranking_names', []) %}
+                        <tr>
+                            <td class="text-center">
+                                {% set rank = loop.index %}
+                                {% if rank <= 3 %}
+                                <span class="badge bg-{% if rank == 1 %}danger{% elif rank == 2 %}warning text-dark{% else %}info{% endif %}">{{ rank }}</span>
+                                {% else %}{{ rank }}{% endif %}
+                            </td>
+                            <td>{{ name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <small class="text-muted px-2">{{ final[0].data.get('num_comparisons', 0) }} comparisons made</small>
+                {% else %}
+                <p class="text-muted p-2 mb-0"><em>In progress — no final ranking yet.</em></p>
+                {% endif %}
+
+                {% else %}
+                {# Fallback for unknown method types #}
+                <table class="table table-sm result-table mb-0">
+                    <thead><tr><th>Risk</th><th>Result</th></tr></thead>
                     <tbody>
                         {% for ri in msd.results %}
                         <tr>
@@ -200,6 +325,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% endif %}
             </div>
             {% endif %}
         </div>
