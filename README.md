@@ -1,8 +1,8 @@
-# URANUS Research Project v3.0 ("Neptune v3")
+# URANUS v3.0
 
 **URANUS** (Ultra-light Risk ANalysis Using Stepwise Comparison) is an experimental research platform for studying risk assessment methodologies in IT projects. Developed by the Department of Software Engineering at Jagiellonian University, Krakow, Poland.
 
-Version 3.0 is a complete rewrite of the platform, introducing multi-method support, per-session isolation, full interaction tracking, configurable experiments, and an iframe-embeddable interface.
+Version 3.0 (formerly Neptune) is a complete rewrite of the platform, introducing multi-method support, per-session isolation, full interaction tracking, configurable experiments, and an iframe-embeddable interface.
 
 ---
 
@@ -405,8 +405,8 @@ The layout is responsive and works well within iframe constraints.
 
 ```bash
 # Clone the repository
-git clone https://github.com/JaroslawHryszko/neptune.git
-cd neptune
+git clone https://github.com/JaroslawHryszko/URANUS.git
+cd URANUS
 
 # Create virtual environment
 python3 -m venv venv
