@@ -118,7 +118,7 @@
                     <td><strong>{{ ms.method.display_name }}</strong></td>
                     <td><span class="badge bg-info">{{ ms.method.method_type }}</span></td>
                     <td class="text-center">{{ ms.completed }} / {{ ms.total_sessions }}</td>
-                    <td class="text-center">{{ '%.0f'|format(ms.avg_duration) }}s{% if ms.avg_duration %} <small class="text-muted">({{ '%.1f'|format(ms.avg_duration / 60) }}m)</small>{% endif %}</td>
+                    <td class="text-center">{% if ms.avg_duration %}{{ '%.0f'|format(ms.avg_duration) }}s <small class="text-muted">({{ '%.1f'|format(ms.avg_duration / 60) }}m)</small>{% else %}—{% endif %}</td>
                     <td class="text-center">{{ '%.0f'|format(ms.avg_events) }}</td>
                     <td class="text-center">
                         {% if ms.avg_hesitations > 2 %}
