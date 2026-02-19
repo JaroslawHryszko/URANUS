@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+{% block title %}Session #{{ session.id }} — {{ experiment.name }}{% endblock %}
+
+{% block head %}
+<style>
+    .timeline-page { border-left: 3px solid #0d6efd; padding-left: 16px; margin-bottom: 16px; position: relative; }
+    .timeline-page::before {
+        content: '';
+        width: 12px; height: 12px;
+        background: #0d6efd; border-radius: 50%;
+        position: absolute; left: -8px; top: 4px;
+    }
+    .timeline-page.has-hesitation { border-left-color: #dc3545; }
+    .timeline-page.has-hesitation::before { background: #dc3545; }
+    .event-row { font-size: 0.82rem; padding: 3px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+    .event-row:hover { background: #f8f9fa; }
+    .event-detail { display: none; background: #f8f9fa; border-radius: 4px; padding: 8px 12px; margin: 4px 0; font-family: monospace; font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; }
+    .event-detail.show { display: block; }
+    .type-badge { display: inline-block; min-width: 90px; text-align: center; }
+    .stat-mini { text-align: center; }
+    .stat-mini .fs-4 { font-weight: 700; }
+    .method-card { transition: all 0.2s; }
+    .method-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .result-table td, .result-table th { padding: 4px 8px; font-size: 0.85rem; }
+    .filter-active { background-color: #0d6efd !important; color: white !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 data-bs-toggle="tooltip" data-bs-placement="bottom"
+        title="Detailed exploration of a single session. See the participant's journey through the experiment: every page visited, every interaction event, and the final assessment results — all linked together.">
+        Session #{{ session.id }}
+    </h2>
+    <div>
+        <a href="{{ url_for('admin.analytics', experiment_id=experiment.id) }}" class="btn btn-outline-secondary btn-sm">Back to Analytics</a>
+    </div>
+</div>
+
+<!-- Session Info -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Participant</h6></div>
+            <div class="card-body">
+                <strong>{{ participant.name if participant else '?' }}</strong><br>
+                {% if participant and participant.email %}
+                <small class="text-muted">{{ participant.email }}</small><br>
+                {% endif %}
+                {% if participant %}
+                <code class="small">{{ participant.uuid[:12] }}...</code>
+                {% set demo = participant.get_demographics() %}
+                {% if demo and demo != '{}' %}
+                <hr class="my-2">
+                <small>
+                {% for key, val in demo.items() %}
+                    <strong>{{ key }}:</strong> {{ val }}<br>
+                {% endfor %}
+                </small>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Session Info</h6></div>
+            <div class="card-body">
+                <small>
+                <strong>Started:</strong> {{ session.started_at.strftime('%Y-%m-%d %H:%M:%S') if session.started_at else '?' }}<br>
+                <strong>Completed:</strong>
+                {% if session.completed_at %}
+                    {{ session.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                    <span class="badge bg-success">Done</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">In Progress</span>
+                {% endif %}<br>
+                {% if session.completed_at and session.started_at %}
+                <strong>Total time:</strong> {{ '%.0f'|format((session.completed_at - session.started_at).total_seconds()) }}s
+                ({{ '%.1f'|format((session.completed_at - session.started_at).total_seconds() / 60) }}m)<br>
+                {% endif %}
+                <strong>IP:</strong> {{ session.ip_address or '?' }}<br>
+                <strong>Iframe:</strong> {{ 'Yes' if session.is_iframe else 'No' }}
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Device</h6></div>
+            <div class="card-body">
+                <small>
+                <strong>Screen:</strong> {{ session.screen_width or '?' }} x {{ session.screen_height or '?' }}<br>
+                <strong>Language:</strong> {{ session.language or '?' }}<br>
+                <strong>Timezone:</strong> {{ session.timezone or '?' }}<br>
+                <strong>Browser:</strong><br>
+                <span class="text-muted" style="word-break:break-all;">{{ session.user_agent[:120] if session.user_agent else '?' }}</span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mini Stats Row -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card stat-mini">
+            <div class="card-body py-2">
+                <div class="fs-4 text-primary">{{ total_events }}</div>
+                <small class="text-muted">Total Events</small>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-mini">
+            <div class="card-body py-2">
+                <div class="fs-4 text-info">{{ method_sessions_data|length }}</div>
+                <small class="text-muted">Methods</small>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-mini">
+            <div class="card-body py-2">
+                <div class="fs-4 text-success">{{ pages_timeline|length }}</div>
+                <small class="text-muted">Pages Visited</small>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-mini">
+            <div class="card-body py-2">
+                {% set total_hesitations = all_events|selectattr('event_type', 'equalto', 'hesitation')|list|length %}
+                <div class="fs-4 {% if total_hesitations > 3 %}text-danger{% elif total_hesitations > 0 %}text-warning{% else %}text-muted{% endif %}">{{ total_hesitations }}</div>
+                <small class="text-muted">Hesitations</small>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-mini">
+            <div class="card-body py-2">
+                {% set total_clicks = all_events|selectattr('event_type', 'equalto', 'click')|list|length %}
+                <div class="fs-4">{{ total_clicks }}</div>
+                <small class="text-muted">Clicks</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Method Sessions with Results -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0" data-bs-toggle="tooltip" title="Each card represents one assessment method the participant completed (or started). Shows the method's behavioral metrics alongside the actual assessment results — so you can see HOW they answered and WHAT they answered.">
+            Method Sessions &amp; Results
+        </h5>
+    </div>
+    <div class="card-body">
+        {% for msd in method_sessions_data %}
+        <div class="card method-card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ msd.method.display_name if msd.method else '?' }}</strong>
+                    <span class="badge bg-info ms-1">{{ msd.method.method_type if msd.method else '?' }}</span>
+                    <span class="badge bg-{{ 'success' if msd.ms.status == 'completed' else 'warning' }} ms-1">{{ msd.ms.status }}</span>
+                </div>
+                <div class="text-end">
+                    {% if msd.duration_sec %}
+                    <span class="badge bg-light text-dark" data-bs-toggle="tooltip" title="Time from start to completion of this method.">
+                        {{ '%.0f'|format(msd.duration_sec) }}s
+                    </span>
+                    {% endif %}
+                    <span class="badge bg-light text-dark" data-bs-toggle="tooltip" title="Total interaction events during this method.">
+                        {{ msd.event_count }} events
+                    </span>
+                    <span class="badge bg-light text-dark" data-bs-toggle="tooltip" title="Click events during this method.">
+                        {{ msd.clicks }} clicks
+                    </span>
+                    {% if msd.hesitations > 0 %}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Hesitation events: moments of >10s inactivity while working on this method.">
+                        {{ msd.hesitations }} hesit.
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if msd.results %}
+            <div class="card-body p-2">
+                <table class="table table-sm result-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Risk</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ri in msd.results %}
+                        <tr>
+                            <td>{{ ri.risk_name }}</td>
+                            <td><code class="small">{{ ri.data }}</code></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Page Timeline -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0" data-bs-toggle="tooltip" title="Visual timeline of the participant's journey through the experiment. Each section represents a page they visited. Duration, number of events, and hesitations are shown for each page. Red border indicates hesitation occurred on that page.">
+            Page Timeline
+        </h5>
+        <div>
+            <small class="text-muted me-2">Filter:</small>
+            <button class="btn btn-outline-secondary btn-sm event-filter" data-filter="all">All</button>
+            <button class="btn btn-outline-primary btn-sm event-filter" data-filter="click">Clicks</button>
+            <button class="btn btn-outline-danger btn-sm event-filter" data-filter="hesitation">Hesitations</button>
+            <button class="btn btn-outline-success btn-sm event-filter" data-filter="change">Changes</button>
+            <button class="btn btn-outline-info btn-sm event-filter" data-filter="scroll">Scrolls</button>
+        </div>
+    </div>
+    <div class="card-body" id="timelineContainer">
+        {% for pg in pages_timeline %}
+        <div class="timeline-page {% if pg.hesitations > 0 %}has-hesitation{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <div>
+                    <strong>{{ pg.page }}</strong>
+                    <small class="text-muted ms-2">({{ '%.1f'|format(pg.duration_ms / 1000) }}s)</small>
+                </div>
+                <div>
+                    <span class="badge bg-light text-dark">{{ pg.event_count }} events</span>
+                    <span class="badge bg-light text-dark">{{ pg.clicks }} clicks</span>
+                    {% if pg.hesitations > 0 %}
+                    <span class="badge bg-danger">{{ pg.hesitations }} hesit.</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="timeline-events">
+                {% for evt in pg.events %}
+                <div class="event-row d-flex align-items-center" data-event-type="{{ evt.event_type }}" onclick="this.querySelector('.event-detail').classList.toggle('show')">
+                    <small class="text-muted me-2" style="min-width:70px;" data-bs-toggle="tooltip" title="Time since page started loading (performance.now).">{{ '%.1f'|format(evt.timestamp / 1000) }}s</small>
+                    <span class="badge type-badge bg-{% if evt.event_type == 'click' %}primary{% elif evt.event_type == 'hesitation' %}danger{% elif evt.event_type == 'change' %}success{% elif evt.event_type == 'scroll' %}secondary{% elif evt.event_type == 'page_load' %}info{% elif evt.event_type == 'page_unload' %}warning text-dark{% elif evt.event_type == 'focus' %}light text-dark{% elif evt.event_type == 'blur' %}light text-dark{% elif evt.event_type == 'form_submit' %}warning text-dark{% elif evt.event_type == 'keypress' %}dark{% else %}secondary{% endif %} me-2">{{ evt.event_type }}</span>
+                    <small>
+                        {% if evt.element_id %}<code>#{{ evt.element_id }}</code> {% endif %}
+                        {{ evt.element_tag }}
+                        {% if evt.element_class %}<span class="text-muted">.{{ evt.element_class[:40] }}</span>{% endif %}
+                    </small>
+                    <div class="event-detail">{{ evt.get_event_data() }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Event Density Chart -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0" data-bs-toggle="tooltip" title="Shows how interaction events are distributed over time during the session. Peaks indicate high activity; flat areas indicate periods of inactivity or reading. Useful for spotting patterns in participant behavior.">
+            Event Density Over Time
+        </h5>
+    </div>
+    <div class="card-body">
+        <canvas id="densityChart" height="120"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Event filtering
+    var filterBtns = document.querySelectorAll('.event-filter');
+    filterBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(function(b) { b.classList.remove('filter-active'); });
+            btn.classList.add('filter-active');
+            var filter = btn.dataset.filter;
+            document.querySelectorAll('.event-row').forEach(function(row) {
+                if (filter === 'all' || row.dataset.eventType === filter) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Event Density Chart
+    var events = {{ events_json|safe }};
+    if (events.length > 0) {
+        // Create time buckets (10-second intervals)
+        var maxTs = events[events.length - 1].timestamp;
+        var bucketSize = Math.max(10000, maxTs / 50); // at most 50 buckets
+        var buckets = {};
+        var clickBuckets = {};
+        var hesitBuckets = {};
+        events.forEach(function(e) {
+            var b = Math.floor(e.timestamp / bucketSize);
+            buckets[b] = (buckets[b] || 0) + 1;
+            if (e.event_type === 'click') clickBuckets[b] = (clickBuckets[b] || 0) + 1;
+            if (e.event_type === 'hesitation') hesitBuckets[b] = (hesitBuckets[b] || 0) + 1;
+        });
+        var maxBucket = Math.max.apply(null, Object.keys(buckets).map(Number));
+        var labels = [];
+        var allData = [], clickData = [], hesitData = [];
+        for (var i = 0; i <= maxBucket; i++) {
+            labels.push(Math.round(i * bucketSize / 1000) + 's');
+            allData.push(buckets[i] || 0);
+            clickData.push(clickBuckets[i] || 0);
+            hesitData.push(hesitBuckets[i] || 0);
+        }
+        new Chart(document.getElementById('densityChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'All Events', data: allData, backgroundColor: 'rgba(13,110,253,0.3)', borderColor: '#0d6efd', borderWidth: 1 },
+                    { label: 'Clicks', data: clickData, backgroundColor: 'rgba(25,135,84,0.5)', borderColor: '#198754', borderWidth: 1 },
+                    { label: 'Hesitations', data: hesitData, backgroundColor: 'rgba(220,53,69,0.7)', borderColor: '#dc3545', borderWidth: 1 }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Time since session start' }, ticks: { maxTicksLimit: 20 } },
+                    y: { beginAtZero: true, title: { display: true, text: 'Events' } }
+                },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

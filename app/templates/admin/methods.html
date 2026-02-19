@@ -1,36 +1,60 @@
 {% extends "base.html" %}
 {% block title %}Methods — {{ experiment.name }}{% endblock %}
 
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<style>
+    .ql-editor { min-height: 80px; }
+    .ql-container { font-size: 14px; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Methods: {{ experiment.name }}</h2>
+    <h2 data-bs-toggle="tooltip" data-bs-placement="bottom"
+        title="Methods are the assessment techniques that participants will use to evaluate risks. Each method produces a different type of ranking. You can add multiple methods and control their order, display names, and parameters.">
+        Methods: {{ experiment.name }}
+    </h2>
     <a href="{{ url_for('admin.experiment_edit', experiment_id=experiment.id) }}" class="btn btn-outline-secondary">Back to Experiment</a>
 </div>
 
 <!-- Add Method -->
 <div class="card mb-4">
-    <div class="card-header"><h5 class="mb-0">Add Method</h5></div>
+    <div class="card-header">
+        <h5 class="mb-0"
+            data-bs-toggle="tooltip"
+            title="Add a new assessment method to this experiment. Choose a type, optionally override the display name and provide custom instructions.">
+            Add Method
+        </h5>
+    </div>
     <div class="card-body">
         <form method="post" class="row g-2 align-items-end">
             <input type="hidden" name="action" value="add">
             <div class="col-md-3">
-                <label class="form-label">Type</label>
+                <label class="form-label"
+                       data-bs-toggle="tooltip"
+                       title="Choose the assessment method type. Uranus = pairwise comparison (professor's algorithm). Matrix = risk x criteria scoring (FMEA-style). Ranking = drag-and-drop ordering. Budget = distribute points among risks. Categorization = assign risk categories (High/Med/Low).">
+                    Type
+                </label>
                 <select class="form-select" name="method_type">
                     {% for key, label in METHOD_TYPE_LABELS.items() %}
                     <option value="{{ key }}">{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Display Name (optional)</label>
+            <div class="col-md-5">
+                <label class="form-label"
+                       data-bs-toggle="tooltip"
+                       title="Override the method's name as shown to participants. If left empty, the default name for the type is used (e.g. 'Pairwise Comparison' for Uranus).">
+                    Display Name (optional)
+                </label>
                 <input type="text" class="form-control" name="display_name" placeholder="Leave empty for default">
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Instructions (optional)</label>
-                <input type="text" class="form-control" name="method_instructions">
-            </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Add</button>
+                <button type="submit" class="btn btn-primary w-100"
+                        data-bs-toggle="tooltip" title="Add this method to the experiment with default configuration. You can write instructions and fine-tune the config JSON afterwards.">
+                    Add
+                </button>
             </div>
         </form>
     </div>
@@ -42,45 +66,74 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <div>
             <strong>{{ method.display_name }}</strong>
-            <span class="badge bg-{{ 'success' if method.is_active else 'secondary' }} ms-2">
+            <span class="badge bg-{{ 'success' if method.is_active else 'secondary' }} ms-2"
+                  data-bs-toggle="tooltip"
+                  title="{% if method.is_active %}This method is active and will be assigned to participants.{% else %}This method is inactive and will NOT be assigned to participants. Activate it to include it.{% endif %}">
                 {{ 'Active' if method.is_active else 'Inactive' }}
             </span>
-            <span class="badge bg-info ms-1">{{ METHOD_TYPE_LABELS.get(method.method_type, method.method_type) }}</span>
+            <span class="badge bg-info ms-1"
+                  data-bs-toggle="tooltip"
+                  title="The underlying algorithm type for this method. Determines how participants interact with risks and how results are computed.">
+                {{ METHOD_TYPE_LABELS.get(method.method_type, method.method_type) }}
+            </span>
         </div>
         <div class="btn-group btn-group-sm">
             <form method="post" class="d-inline">
                 <input type="hidden" name="action" value="toggle">
                 <input type="hidden" name="method_id" value="{{ method.id }}">
-                <button type="submit" class="btn btn-outline-{{ 'warning' if method.is_active else 'success' }} btn-sm">
+                <button type="submit" class="btn btn-outline-{{ 'warning' if method.is_active else 'success' }} btn-sm"
+                        data-bs-toggle="tooltip"
+                        title="{% if method.is_active %}Deactivate this method — it will no longer be assigned to new participants. Existing results are preserved.{% else %}Activate this method — it will be included in the assignment pool for new participants.{% endif %}">
                     {{ 'Deactivate' if method.is_active else 'Activate' }}
                 </button>
             </form>
             <form method="post" class="d-inline" onsubmit="return confirm('Delete this method?')">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="method_id" value="{{ method.id }}">
-                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                <button type="submit" class="btn btn-outline-danger btn-sm"
+                        data-bs-toggle="tooltip"
+                        title="Permanently delete this method from the experiment. Any existing results for this method will lose their link. This cannot be undone.">
+                    Delete
+                </button>
             </form>
         </div>
     </div>
     <div class="card-body">
-        <form method="post">
+        <form method="post" class="method-form">
             <input type="hidden" name="action" value="update_config">
             <input type="hidden" name="method_id" value="{{ method.id }}">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Display Name</label>
+                    <label class="form-label"
+                           data-bs-toggle="tooltip"
+                           title="The name shown to participants for this method. Change it to something more descriptive if needed, e.g. 'Risk Priority Matrix' instead of just 'Matrix'.">
+                        Display Name
+                    </label>
                     <input type="text" class="form-control" name="display_name" value="{{ method.display_name }}">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Instructions</label>
-                    <textarea class="form-control" name="method_instructions" rows="2">{{ method.instructions }}</textarea>
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label">Config (JSON)</label>
+                <label class="form-label"
+                       data-bs-toggle="tooltip"
+                       title="Rich text instructions shown to the participant before starting this method. Use the editor toolbar to format — bold, lists, links. Explain what they need to do and how to interact with the interface.">
+                    Instructions
+                </label>
+                <div class="quill-method-editor" data-bs-toggle="tooltip"
+                     title="Visual editor for method instructions. Format text using the toolbar above."></div>
+                <textarea name="method_instructions" class="method-instructions-hidden" style="display:none;">{{ method.instructions }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label"
+                       data-bs-toggle="tooltip"
+                       title="JSON configuration for this method. Controls criteria, scales, labels, categories, point budgets, parameters, and aggregation. Each method type has different config options. Edit carefully — invalid JSON will cause errors.">
+                    Config (JSON)
+                </label>
                 <textarea class="form-control font-monospace" name="config_json" rows="5">{{ method.config }}</textarea>
             </div>
-            <button type="submit" class="btn btn-sm btn-primary">Save Config</button>
+            <button type="submit" class="btn btn-sm btn-primary"
+                    data-bs-toggle="tooltip" title="Save the updated display name, instructions, and JSON configuration for this method.">
+                Save Config
+            </button>
         </form>
     </div>
 </div>
@@ -89,4 +142,41 @@
 {% if not methods %}
 <div class="alert alert-info">No methods configured yet. Add one above.</div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var toolbarOptions = [
+        [{ 'header': [2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['link'],
+        ['clean']
+    ];
+
+    // Initialize Quill for each method editor
+    document.querySelectorAll('.quill-method-editor').forEach(function(editorEl) {
+        var form = editorEl.closest('form');
+        var hidden = form.querySelector('.method-instructions-hidden');
+
+        var quill = new Quill(editorEl, {
+            theme: 'snow',
+            modules: { toolbar: toolbarOptions },
+            placeholder: 'Write instructions for this method...'
+        });
+
+        // Load existing content
+        if (hidden.value.trim()) {
+            quill.root.innerHTML = hidden.value;
+        }
+
+        // Sync on submit
+        form.addEventListener('submit', function() {
+            hidden.value = quill.root.innerHTML;
+        });
+    });
+});
+</script>
 {% endblock %}

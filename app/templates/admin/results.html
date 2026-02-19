@@ -3,12 +3,21 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Results: {{ experiment.name }}</h2>
+    <h2 data-bs-toggle="tooltip" data-bs-placement="bottom"
+        title="Assessment results from all participants, grouped by method and participant. Each card shows one participant's results for one method. Use the export buttons to download data for further analysis.">
+        Results: {{ experiment.name }}
+    </h2>
     <div>
         <a href="{{ url_for('admin.results_export', experiment_id=experiment.id, format='csv') }}"
-           class="btn btn-outline-primary">Export CSV</a>
+           class="btn btn-outline-primary"
+           data-bs-toggle="tooltip" title="Download all results as a CSV file. Each row is one risk assessment. Columns include participant name, method type, risk name, and all result values. Ready for Excel or statistical software.">
+            Export CSV
+        </a>
         <a href="{{ url_for('admin.results_export', experiment_id=experiment.id, format='json') }}"
-           class="btn btn-outline-primary">Export JSON</a>
+           class="btn btn-outline-primary"
+           data-bs-toggle="tooltip" title="Download all results as a JSON file. Contains the full structured data including nested objects. Useful for programmatic analysis or import into other tools.">
+            Export JSON
+        </a>
         <a href="{{ url_for('admin.experiment_edit', experiment_id=experiment.id) }}"
            class="btn btn-outline-secondary ms-2">Back</a>
     </div>
@@ -17,7 +26,9 @@
 {% if results_data %}
 {% for item in results_data %}
 <div class="card mb-3">
-    <div class="card-header">
+    <div class="card-header"
+         data-bs-toggle="tooltip"
+         title="Results card: shows the output of one method session — one participant completing one method. The badge shows the method type, and the timestamp shows when they finished.">
         <strong>{{ item.method.display_name }}</strong>
         {% if item.participant %}
         — <em>{{ item.participant.name }}</em>
@@ -31,18 +42,33 @@
         {% set summary = item.summary %}
         {% if summary.type == 'ranking' %}
         <table class="table table-sm">
-            <thead><tr><th>Rank</th><th>Risk</th></tr></thead>
+            <thead>
+                <tr>
+                    <th data-bs-toggle="tooltip" title="Position in the final ranking produced by the Uranus pairwise comparison algorithm. Rank 1 = highest priority risk.">Rank</th>
+                    <th data-bs-toggle="tooltip" title="The name of the risk at this position in the ranking.">Risk</th>
+                </tr>
+            </thead>
             <tbody>
             {% for r in summary.ranking %}
             <tr><td>{{ r.rank }}</td><td>{{ r.risk }}</td></tr>
             {% endfor %}
             </tbody>
         </table>
-        <small class="text-muted">Comparisons made: {{ summary.num_comparisons }}</small>
+        <small class="text-muted"
+               data-bs-toggle="tooltip"
+               title="Total number of pairwise comparisons the participant made to produce this ranking. More comparisons generally mean higher confidence in the result.">
+            Comparisons made: {{ summary.num_comparisons }}
+        </small>
 
         {% elif summary.type == 'matrix' %}
         <table class="table table-sm">
-            <thead><tr><th>Risk</th><th>Values</th><th>Priority</th></tr></thead>
+            <thead>
+                <tr>
+                    <th data-bs-toggle="tooltip" title="The risk being assessed.">Risk</th>
+                    <th data-bs-toggle="tooltip" title="The scores assigned by the participant for each criterion (e.g. probability, impact). Raw values as entered.">Values</th>
+                    <th data-bs-toggle="tooltip" title="Computed priority score. Calculated by multiplying or aggregating the criteria values according to the method configuration.">Priority</th>
+                </tr>
+            </thead>
             <tbody>
             {% for r in summary.results %}
             <tr>
@@ -56,12 +82,21 @@
 
         {% elif summary.type in ('ranking', 'budget', 'categorization') %}
         <table class="table table-sm">
-            <thead><tr><th>Risk</th>
-                {% if summary.type == 'budget' %}<th>Points</th>{% endif %}
-                {% if summary.type == 'categorization' %}<th>Category</th>{% endif %}
-                {% if summary.type == 'ranking' %}<th>Rank</th>{% endif %}
-                <th>Parameter</th>
-            </tr></thead>
+            <thead>
+                <tr>
+                    <th data-bs-toggle="tooltip" title="The risk being assessed.">Risk</th>
+                    {% if summary.type == 'budget' %}
+                    <th data-bs-toggle="tooltip" title="Number of points allocated to this risk by the participant. More points = higher perceived risk.">Points</th>
+                    {% endif %}
+                    {% if summary.type == 'categorization' %}
+                    <th data-bs-toggle="tooltip" title="The category assigned to this risk by the participant (e.g. Critical, High, Medium, Low, Negligible).">Category</th>
+                    {% endif %}
+                    {% if summary.type == 'ranking' %}
+                    <th data-bs-toggle="tooltip" title="Position assigned by the participant via drag-and-drop. Rank 1 = most important.">Rank</th>
+                    {% endif %}
+                    <th data-bs-toggle="tooltip" title="The parameter being evaluated (e.g. 'overall', 'impact', 'probability'). If the method is configured for per-parameter assessment, each parameter gets a separate row.">Parameter</th>
+                </tr>
+            </thead>
             <tbody>
             {% for r in summary.results %}
             <tr>
@@ -76,7 +111,11 @@
         </table>
 
         {% elif summary.type == 'in_progress' %}
-        <p class="text-muted">In progress — {{ summary.comparisons_made }} comparisons made so far.</p>
+        <p class="text-muted"
+           data-bs-toggle="tooltip"
+           title="This participant has not finished the method yet. The number shows how many comparisons/steps they have completed so far.">
+            In progress — {{ summary.comparisons_made }} comparisons made so far.
+        </p>
 
         {% else %}
         <pre>{{ summary }}</pre>

@@ -1,40 +1,74 @@
 {% extends "base.html" %}
 {% block title %}{% if experiment %}Edit{% else %}New{% endif %} Experiment{% endblock %}
 
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<style>
+    .ql-editor { min-height: 120px; }
+    .ql-container { font-size: 14px; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>{% if experiment %}Edit: {{ experiment.name }}{% else %}New Experiment{% endif %}</h2>
     <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
 </div>
 
-<form method="post">
+<form method="post" id="experimentForm">
     <div class="row">
         <div class="col-md-8">
             <div class="card mb-4">
                 <div class="card-header"><h5 class="mb-0">Basic Info</h5></div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="name" class="form-label">Name</label>
+                        <label for="name" class="form-label"
+                               data-bs-toggle="tooltip"
+                               title="The experiment name. Participants will see this on the welcome page. Use something descriptive, e.g. 'ERP Risk Assessment 2026'.">
+                            Name
+                        </label>
                         <input type="text" class="form-control" id="name" name="name"
                                value="{{ experiment.name if experiment else '' }}" required>
                     </div>
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
+                        <label for="description" class="form-label"
+                               data-bs-toggle="tooltip"
+                               title="A short internal description for your reference. Not shown to participants — only visible here in the admin panel.">
+                            Description
+                        </label>
                         <textarea class="form-control" id="description" name="description" rows="2">{{ experiment.description if experiment else '' }}</textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="welcome_text" class="form-label">Welcome Text (HTML)</label>
-                        <textarea class="form-control" id="welcome_text" name="welcome_text" rows="6">{{ experiment.welcome_text if experiment else '' }}</textarea>
+                        <label class="form-label"
+                               data-bs-toggle="tooltip"
+                               title="Rich text displayed on the first page participants see. Use the toolbar to format text — bold, italic, headings, lists, links. No need to write HTML manually!">
+                            Welcome Text
+                        </label>
+                        <div id="editor-welcome" data-bs-toggle="tooltip"
+                             title="This is a visual editor. Select text and use the toolbar above to format it. Everything you type here will be shown on the welcome page."></div>
+                        <textarea name="welcome_text" id="welcome_text_hidden" style="display:none;">{{ experiment.welcome_text if experiment else '' }}</textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="instructions" class="form-label">Instructions (HTML)</label>
-                        <textarea class="form-control" id="instructions" name="instructions" rows="6">{{ experiment.instructions if experiment else '' }}</textarea>
+                        <label class="form-label"
+                               data-bs-toggle="tooltip"
+                               title="Rich text shown on the instructions page, after the participant enters their name. Explain the scenario, describe the risks, define terms. Use the toolbar to format.">
+                            Instructions
+                        </label>
+                        <div id="editor-instructions" data-bs-toggle="tooltip"
+                             title="This is a visual editor. Write and format the instructions that participants will read before starting the assessment methods."></div>
+                        <textarea name="instructions" id="instructions_hidden" style="display:none;">{{ experiment.instructions if experiment else '' }}</textarea>
                     </div>
                 </div>
             </div>
 
             <div class="card mb-4">
-                <div class="card-header"><h5 class="mb-0">Custom CSS</h5></div>
+                <div class="card-header">
+                    <h5 class="mb-0"
+                        data-bs-toggle="tooltip"
+                        title="Optional CSS code injected into the experiment pages. Use this to customize colors, fonts, or layout for this specific experiment without affecting others.">
+                        Custom CSS
+                    </h5>
+                </div>
                 <div class="card-body">
                     <textarea class="form-control font-monospace" id="custom_css" name="custom_css" rows="4">{{ experiment.custom_css if experiment else '' }}</textarea>
                 </div>
@@ -42,7 +76,13 @@
 
             {% if experiment and experiment.demographics_enabled %}
             <div class="card mb-4">
-                <div class="card-header"><h5 class="mb-0">Demographics Fields (JSON)</h5></div>
+                <div class="card-header">
+                    <h5 class="mb-0"
+                        data-bs-toggle="tooltip"
+                        title="JSON array defining the demographic form fields shown to participants. Each field has: name (internal key), label (what participant sees), type (text/email/select/textarea), options (for select), required (true/false).">
+                        Demographics Fields (JSON)
+                    </h5>
+                </div>
                 <div class="card-body">
                     <textarea class="form-control font-monospace" id="demographics_fields" name="demographics_fields" rows="6">{{ experiment.demographics_fields if experiment else '[]' }}</textarea>
                     <small class="text-muted">Example: [{"name":"age","label":"Age Range","type":"select","options":["18-25","26-35","36+"],"required":false}]</small>
@@ -56,7 +96,11 @@
                 <div class="card-header"><h5 class="mb-0">Settings</h5></div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label">Method Assignment Mode</label>
+                        <label class="form-label"
+                               data-bs-toggle="tooltip"
+                               title="How methods are assigned to participants. Fixed Order: every participant gets the same methods in the same order. Random: N methods are randomly selected and shuffled. Participant Choice: the participant picks which methods to complete.">
+                            Method Assignment Mode
+                        </label>
                         <select class="form-select" name="method_assignment_mode">
                             <option value="fixed" {{ 'selected' if experiment and experiment.method_assignment_mode == 'fixed' }}>Fixed Order</option>
                             <option value="random" {{ 'selected' if experiment and experiment.method_assignment_mode == 'random' }}>Random</option>
@@ -64,7 +108,11 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="methods_per_participant" class="form-label">Methods per Participant (0 = all)</label>
+                        <label for="methods_per_participant" class="form-label"
+                               data-bs-toggle="tooltip"
+                               title="Only used in Random mode. How many methods each participant gets. Set to 0 to assign all active methods (randomly shuffled). For example, if you have 5 methods and set this to 3, each participant will randomly get 3 out of 5.">
+                            Methods per Participant (0 = all)
+                        </label>
                         <input type="number" class="form-control" id="methods_per_participant"
                                name="methods_per_participant" min="0"
                                value="{{ experiment.methods_per_participant if experiment else 0 }}">
@@ -72,17 +120,29 @@
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="checkbox" id="demographics_enabled"
                                name="demographics_enabled" {{ 'checked' if not experiment or experiment.demographics_enabled }}>
-                        <label class="form-check-label" for="demographics_enabled">Enable Demographics</label>
+                        <label class="form-check-label" for="demographics_enabled"
+                               data-bs-toggle="tooltip"
+                               title="If checked, participants will see a demographics form (email, experience, etc.) before starting the assessment. You can customize the fields in the Demographics Fields JSON section.">
+                            Enable Demographics
+                        </label>
                     </div>
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
                                {{ 'checked' if not experiment or experiment.is_active }}>
-                        <label class="form-check-label" for="is_active">Active</label>
+                        <label class="form-check-label" for="is_active"
+                               data-bs-toggle="tooltip"
+                               title="Active experiments are visible and accessible to participants. Deactivate to temporarily hide the experiment without losing any data.">
+                            Active
+                        </label>
                     </div>
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="checkbox" id="is_template" name="is_template"
                                {{ 'checked' if experiment and experiment.is_template }}>
-                        <label class="form-check-label" for="is_template">Template</label>
+                        <label class="form-check-label" for="is_template"
+                               data-bs-toggle="tooltip"
+                               title="Mark as a template to use this experiment as a starting point for new experiments. Templates appear with a special badge on the dashboard and can be cloned easily.">
+                            Template
+                        </label>
                     </div>
                 </div>
             </div>
@@ -92,16 +152,31 @@
                 <div class="card-header"><h5 class="mb-0">Quick Links</h5></div>
                 <div class="card-body">
                     <a href="{{ url_for('admin.risks_manage', experiment_id=experiment.id) }}"
-                       class="btn btn-outline-secondary w-100 mb-2">Manage Risks ({{ experiment.risks|length }})</a>
+                       class="btn btn-outline-secondary w-100 mb-2"
+                       data-bs-toggle="tooltip" title="Go to the risk management page where you can add, edit, delete, and reorder the risks for this experiment.">
+                        Manage Risks ({{ experiment.risks|length }})
+                    </a>
                     <a href="{{ url_for('admin.methods_manage', experiment_id=experiment.id) }}"
-                       class="btn btn-outline-secondary w-100 mb-2">Manage Methods ({{ experiment.methods|length }})</a>
+                       class="btn btn-outline-secondary w-100 mb-2"
+                       data-bs-toggle="tooltip" title="Go to the method management page where you can add assessment methods (Uranus, Matrix, Ranking, Budget, Categorization) and configure their parameters.">
+                        Manage Methods ({{ experiment.methods|length }})
+                    </a>
                     <a href="{{ url_for('admin.results', experiment_id=experiment.id) }}"
-                       class="btn btn-outline-info w-100 mb-2">View Results</a>
+                       class="btn btn-outline-info w-100 mb-2"
+                       data-bs-toggle="tooltip" title="View all assessment results submitted by participants. Results are grouped by method and participant.">
+                        View Results
+                    </a>
                     <a href="{{ url_for('admin.participants', experiment_id=experiment.id) }}"
-                       class="btn btn-outline-info w-100 mb-2">View Participants</a>
+                       class="btn btn-outline-info w-100 mb-2"
+                       data-bs-toggle="tooltip" title="See all participants who started this experiment, their demographics, and session completion status.">
+                        View Participants
+                    </a>
                     <hr>
                     <a href="{{ url_for('experiment.welcome', experiment_id=experiment.id) }}"
-                       class="btn btn-outline-success w-100 mb-2" target="_blank">Preview Experiment</a>
+                       class="btn btn-outline-success w-100 mb-2" target="_blank"
+                       data-bs-toggle="tooltip" title="Open the experiment as a participant would see it (in a new tab). Useful for testing the flow before sharing with real participants.">
+                        Preview Experiment
+                    </a>
                 </div>
             </div>
 
@@ -110,7 +185,11 @@
                 <div class="card-body">
                     <form method="post" action="{{ url_for('admin.experiment_delete', experiment_id=experiment.id) }}"
                           onsubmit="return confirm('Delete this experiment and ALL its data? This cannot be undone!')">
-                        <button type="submit" class="btn btn-danger w-100">Delete Experiment</button>
+                        <button type="submit" class="btn btn-danger w-100"
+                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                title="Permanently delete this experiment and ALL associated data: risks, methods, participants, sessions, results, and interaction logs. This action CANNOT be undone!">
+                            Delete Experiment
+                        </button>
                     </form>
                 </div>
             </div>
@@ -118,6 +197,57 @@
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary btn-lg">{% if experiment %}Save Changes{% else %}Create Experiment{% endif %}</button>
+    <button type="submit" class="btn btn-primary btn-lg"
+            data-bs-toggle="tooltip" data-bs-placement="top"
+            title="Save all changes made on this page to the database.">
+        {% if experiment %}Save Changes{% else %}Create Experiment{% endif %}
+    </button>
 </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var toolbarOptions = [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        ['link'],
+        [{ 'align': [] }],
+        ['clean']
+    ];
+
+    var quillWelcome = new Quill('#editor-welcome', {
+        theme: 'snow',
+        modules: { toolbar: toolbarOptions },
+        placeholder: 'Write the welcome text that participants will see first...'
+    });
+
+    var quillInstructions = new Quill('#editor-instructions', {
+        theme: 'snow',
+        modules: { toolbar: toolbarOptions },
+        placeholder: 'Write the instructions shown after the participant enters their name...'
+    });
+
+    // Load existing content
+    var welcomeContent = document.getElementById('welcome_text_hidden').value;
+    if (welcomeContent.trim()) {
+        quillWelcome.root.innerHTML = welcomeContent;
+    }
+
+    var instructionsContent = document.getElementById('instructions_hidden').value;
+    if (instructionsContent.trim()) {
+        quillInstructions.root.innerHTML = instructionsContent;
+    }
+
+    // On form submit, sync Quill content to hidden textareas
+    document.getElementById('experimentForm').addEventListener('submit', function() {
+        document.getElementById('welcome_text_hidden').value = quillWelcome.root.innerHTML;
+        document.getElementById('instructions_hidden').value = quillInstructions.root.innerHTML;
+    });
+});
+</script>
 {% endblock %}

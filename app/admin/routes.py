@@ -489,3 +489,211 @@ def interactions_export(experiment_id, format):
                         headers={"Content-disposition":
                                  f"attachment; filename=interactions-{exp.id}-{timestamp}.json"})
     return "Invalid format", 400
+
+
+# --- Documentation ---
+
+@admin_bp.route('/docs')
+@admin_required
+def docs():
+    return render_template('admin/docs.html')
+
+# --- Analytics ---
+
+@admin_bp.route('/experiment/<int:experiment_id>/analytics')
+@admin_required
+def analytics(experiment_id):
+    exp = Experiment.query.get_or_404(experiment_id)
+    participants_list = Participant.query.filter_by(experiment_id=experiment_id).all()
+    sessions_list = ExpSession.query.filter_by(experiment_id=experiment_id).order_by(ExpSession.started_at).all()
+    methods = Method.query.filter_by(experiment_id=experiment_id).order_by(Method.order).all()
+    risks = Risk.query.filter_by(experiment_id=experiment_id).order_by(Risk.order).all()
+
+    # Summary stats
+    total_sessions = len(sessions_list)
+    completed_sessions = sum(1 for s in sessions_list if s.completed_at)
+    total_events = InteractionEvent.query.join(ExpSession).filter(
+        ExpSession.experiment_id == experiment_id).count()
+
+    # Event type breakdown
+    event_type_counts = db.session.query(
+        InteractionEvent.event_type, db.func.count(InteractionEvent.id)
+    ).join(ExpSession).filter(
+        ExpSession.experiment_id == experiment_id
+    ).group_by(InteractionEvent.event_type).all()
+    event_type_counts = sorted(event_type_counts, key=lambda x: -x[1])
+
+    # Per-session stats
+    session_stats = []
+    for s in sessions_list:
+        participant = Participant.query.get(s.participant_id)
+        events = InteractionEvent.query.filter_by(session_id=s.id).all()
+        event_count = len(events)
+        hesitations = sum(1 for e in events if e.event_type == 'hesitation')
+        clicks = sum(1 for e in events if e.event_type == 'click')
+
+        # Duration from first to last event, or from started_at to completed_at
+        duration_sec = None
+        if s.completed_at and s.started_at:
+            duration_sec = (s.completed_at - s.started_at).total_seconds()
+        elif events:
+            timestamps = [e.timestamp for e in events]
+            duration_sec = (max(timestamps) - min(timestamps)) / 1000.0
+
+        # Method sessions
+        msessions = MethodSession.query.filter_by(session_id=s.id).all()
+        methods_completed = sum(1 for ms in msessions if ms.status == 'completed')
+        methods_total = len(msessions)
+
+        session_stats.append({
+            'session': s,
+            'participant': participant,
+            'event_count': event_count,
+            'hesitations': hesitations,
+            'clicks': clicks,
+            'duration_sec': duration_sec,
+            'methods_completed': methods_completed,
+            'methods_total': methods_total,
+        })
+
+    # Per-method stats
+    method_stats = []
+    for method in methods:
+        msessions = MethodSession.query.filter_by(method_id=method.id).all()
+        completed_ms = [ms for ms in msessions if ms.status == 'completed']
+        durations = []
+        event_counts = []
+        hesitation_counts = []
+        for ms in completed_ms:
+            if ms.completed_at and ms.started_at:
+                durations.append((ms.completed_at - ms.started_at).total_seconds())
+            events = InteractionEvent.query.filter_by(method_session_id=ms.id).all()
+            event_counts.append(len(events))
+            hesitation_counts.append(sum(1 for e in events if e.event_type == 'hesitation'))
+
+        method_stats.append({
+            'method': method,
+            'total_sessions': len(msessions),
+            'completed': len(completed_ms),
+            'avg_duration': sum(durations) / len(durations) if durations else None,
+            'avg_events': sum(event_counts) / len(event_counts) if event_counts else 0,
+            'avg_hesitations': sum(hesitation_counts) / len(hesitation_counts) if hesitation_counts else 0,
+        })
+
+    return render_template('admin/analytics.html',
+                           experiment=exp,
+                           total_participants=len(participants_list),
+                           total_sessions=total_sessions,
+                           completed_sessions=completed_sessions,
+                           total_events=total_events,
+                           event_type_counts=event_type_counts,
+                           session_stats=session_stats,
+                           method_stats=method_stats)
+
+
+@admin_bp.route('/experiment/<int:experiment_id>/session/<int:session_id>')
+@admin_required
+def session_detail(experiment_id, session_id):
+    exp = Experiment.query.get_or_404(experiment_id)
+    sess = ExpSession.query.get_or_404(session_id)
+    if sess.experiment_id != experiment_id:
+        return "Session not in experiment", 404
+
+    participant = Participant.query.get(sess.participant_id)
+    risks = Risk.query.filter_by(experiment_id=experiment_id).order_by(Risk.order).all()
+
+    # Method sessions with stats and results
+    method_sessions_data = []
+    for ms in sess.method_sessions:
+        method = Method.query.get(ms.method_id)
+        events = InteractionEvent.query.filter_by(method_session_id=ms.id).order_by(
+            InteractionEvent.timestamp).all()
+        hesitations = sum(1 for e in events if e.event_type == 'hesitation')
+        clicks = sum(1 for e in events if e.event_type == 'click')
+        changes = sum(1 for e in events if e.event_type == 'change')
+
+        duration_sec = None
+        if ms.completed_at and ms.started_at:
+            duration_sec = (ms.completed_at - ms.started_at).total_seconds()
+
+        # Get results
+        results = AssessmentResult.query.filter_by(method_session_id=ms.id).all()
+        result_items = []
+        for ar in results:
+            risk = Risk.query.get(ar.risk_id) if ar.risk_id else None
+            result_items.append({
+                'risk_name': risk.name if risk else '?',
+                'data': ar.get_result_data()
+            })
+
+        method_sessions_data.append({
+            'ms': ms,
+            'method': method,
+            'event_count': len(events),
+            'hesitations': hesitations,
+            'clicks': clicks,
+            'changes': changes,
+            'duration_sec': duration_sec,
+            'results': result_items,
+        })
+
+    # All events for this session, ordered by timestamp
+    all_events = InteractionEvent.query.filter_by(session_id=session_id).order_by(
+        InteractionEvent.timestamp).all()
+
+    # Group events by page for timeline
+    pages_timeline = []
+    current_page = None
+    current_group = []
+    for evt in all_events:
+        page = evt.page_url or '(unknown)'
+        if page != current_page:
+            if current_group:
+                pages_timeline.append({
+                    'page': current_page,
+                    'events': current_group,
+                    'start_ts': current_group[0].timestamp,
+                    'end_ts': current_group[-1].timestamp,
+                    'duration_ms': current_group[-1].timestamp - current_group[0].timestamp,
+                    'event_count': len(current_group),
+                    'hesitations': sum(1 for e in current_group if e.event_type == 'hesitation'),
+                    'clicks': sum(1 for e in current_group if e.event_type == 'click'),
+                })
+            current_page = page
+            current_group = [evt]
+        else:
+            current_group.append(evt)
+    if current_group:
+        pages_timeline.append({
+            'page': current_page,
+            'events': current_group,
+            'start_ts': current_group[0].timestamp,
+            'end_ts': current_group[-1].timestamp,
+            'duration_ms': current_group[-1].timestamp - current_group[0].timestamp,
+            'event_count': len(current_group),
+            'hesitations': sum(1 for e in current_group if e.event_type == 'hesitation'),
+            'clicks': sum(1 for e in current_group if e.event_type == 'click'),
+        })
+
+    # Prepare events data as JSON for JS timeline
+    events_json = json.dumps([{
+        'id': e.id,
+        'timestamp': e.timestamp,
+        'event_type': e.event_type,
+        'element_id': e.element_id,
+        'element_tag': e.element_tag,
+        'element_class': e.element_class,
+        'page_url': e.page_url,
+        'event_data': e.get_event_data(),
+        'method_session_id': e.method_session_id,
+    } for e in all_events])
+
+    return render_template('admin/session_detail.html',
+                           experiment=exp,
+                           session=sess,
+                           participant=participant,
+                           method_sessions_data=method_sessions_data,
+                           pages_timeline=pages_timeline,
+                           all_events=all_events,
+                           events_json=events_json,
+                           total_events=len(all_events))

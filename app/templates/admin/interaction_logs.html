@@ -1,23 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Interaction Logs — {{ experiment.name }}{% endblock %}
 
+{% block head %}
+<style>
+    .event-data-cell { max-width: 300px; cursor: pointer; }
+    .event-data-full { display: none; background: #f8f9fa; border-radius: 4px; padding: 8px; margin-top: 4px;
+                       font-family: monospace; font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; }
+    .event-data-full.show { display: block; }
+    .event-row-clickable:hover { background-color: #f0f4ff; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Interaction Logs: {{ experiment.name }}</h2>
+    <h2 data-bs-toggle="tooltip" data-bs-placement="bottom"
+        title="Raw interaction events captured by the JavaScript tracker. Click any row to expand the full event data JSON. Use the analytics page for visual exploration.">
+        Interaction Logs: {{ experiment.name }}
+    </h2>
     <div>
+        <a href="{{ url_for('admin.analytics', experiment_id=experiment.id) }}" class="btn btn-outline-info btn-sm"
+           data-bs-toggle="tooltip" title="Switch to the visual analytics dashboard with charts, timelines, and the session explorer.">
+            Analytics
+        </a>
         <a href="{{ url_for('admin.interactions_export', experiment_id=experiment.id, format='csv') }}"
-           class="btn btn-outline-primary btn-sm">Export CSV</a>
+           class="btn btn-outline-primary btn-sm ms-1"
+           data-bs-toggle="tooltip" title="Download all interaction events as CSV.">
+            Export CSV
+        </a>
         <a href="{{ url_for('admin.interactions_export', experiment_id=experiment.id, format='json') }}"
-           class="btn btn-outline-primary btn-sm">Export JSON</a>
+           class="btn btn-outline-primary btn-sm"
+           data-bs-toggle="tooltip" title="Download all interaction events as JSON.">
+            Export JSON
+        </a>
         <a href="{{ url_for('admin.experiment_edit', experiment_id=experiment.id) }}"
-           class="btn btn-outline-secondary btn-sm ms-2">Back</a>
+           class="btn btn-outline-secondary btn-sm ms-1">Back</a>
     </div>
 </div>
 
 <!-- Filters -->
 <form method="get" class="row g-2 mb-4">
     <div class="col-md-3">
-        <select class="form-select" name="session_id">
+        <select class="form-select" name="session_id"
+                data-bs-toggle="tooltip" title="Filter events by session.">
             <option value="">All Sessions</option>
             {% for s in sessions %}
             <option value="{{ s.id }}" {{ 'selected' if session_filter == s.id }}>Session #{{ s.id }}</option>
@@ -25,7 +49,8 @@
         </select>
     </div>
     <div class="col-md-3">
-        <select class="form-select" name="event_type">
+        <select class="form-select" name="event_type"
+                data-bs-toggle="tooltip" title="Filter by event type.">
             <option value="">All Event Types</option>
             {% for et in event_types %}
             <option value="{{ et }}" {{ 'selected' if event_type_filter == et }}>{{ et }}</option>
@@ -33,40 +58,56 @@
         </select>
     </div>
     <div class="col-md-2">
-        <button type="submit" class="btn btn-primary">Filter</button>
+        <button type="submit" class="btn btn-primary"
+                data-bs-toggle="tooltip" title="Apply filters.">
+            Filter
+        </button>
     </div>
 </form>
 
-<p class="text-muted">Showing {{ events|length }} of {{ total }} events (page {{ page }})</p>
+<p class="text-muted"
+   data-bs-toggle="tooltip"
+   title="Shows how many events are displayed on this page out of the total matching your filter criteria. Click any row to expand full event data.">
+    Showing {{ events|length }} of {{ total }} events (page {{ page }}) — <em>click a row to see full data</em>
+</p>
 
 {% if events %}
 <div class="table-responsive">
-    <table class="table table-sm table-hover">
+    <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
             <tr>
-                <th>ID</th>
-                <th>Session</th>
-                <th>Timestamp</th>
-                <th>Type</th>
-                <th>Element</th>
-                <th>Page</th>
-                <th>Data</th>
+                <th data-bs-toggle="tooltip" title="Unique event identifier.">ID</th>
+                <th data-bs-toggle="tooltip" title="Session this event belongs to. Click the session number to open the Session Explorer.">Session</th>
+                <th data-bs-toggle="tooltip" title="Time since page loaded (performance.now), converted to seconds.">Time</th>
+                <th data-bs-toggle="tooltip" title="Event type.">Type</th>
+                <th data-bs-toggle="tooltip" title="The HTML element interacted with.">Element</th>
+                <th data-bs-toggle="tooltip" title="Page URL where this event occurred.">Page</th>
+                <th data-bs-toggle="tooltip" title="Additional event data (truncated). Click the row to see full JSON.">Data</th>
             </tr>
         </thead>
         <tbody>
             {% for evt in events %}
-            <tr>
+            <tr class="event-row-clickable" onclick="var el=document.getElementById('detail-{{ evt.id }}'); el.classList.toggle('show');">
                 <td>{{ evt.id }}</td>
-                <td>{{ evt.session_id }}</td>
-                <td>{{ '%.1f'|format(evt.timestamp) }}ms</td>
-                <td><span class="badge bg-secondary">{{ evt.event_type }}</span></td>
                 <td>
-                    {% if evt.element_id %}<code>#{{ evt.element_id }}</code>{% endif %}
-                    {{ evt.element_tag }}
-                    {% if evt.element_class %}<small>.{{ evt.element_class[:30] }}</small>{% endif %}
+                    <a href="{{ url_for('admin.session_detail', experiment_id=experiment.id, session_id=evt.session_id) }}"
+                       onclick="event.stopPropagation();"
+                       data-bs-toggle="tooltip" title="Open Session Explorer for session #{{ evt.session_id }}">
+                        #{{ evt.session_id }}
+                    </a>
                 </td>
-                <td><small>{{ evt.page_url[-40:] if evt.page_url else '' }}</small></td>
-                <td><small>{{ evt.event_data[:100] if evt.event_data else '' }}</small></td>
+                <td>{{ '%.1f'|format(evt.timestamp / 1000) }}s</td>
+                <td><span class="badge bg-{% if evt.event_type == 'click' %}primary{% elif evt.event_type == 'hesitation' %}danger{% elif evt.event_type == 'change' %}success{% elif evt.event_type == 'scroll' %}secondary{% elif evt.event_type == 'page_load' %}info{% elif evt.event_type == 'form_submit' %}warning text-dark{% else %}secondary{% endif %}">{{ evt.event_type }}</span></td>
+                <td>
+                    {% if evt.element_id %}<code>#{{ evt.element_id }}</code> {% endif %}
+                    {{ evt.element_tag }}
+                    {% if evt.element_class %}<small class="text-muted">.{{ evt.element_class[:30] }}</small>{% endif %}
+                </td>
+                <td><small>{{ evt.page_url }}</small></td>
+                <td class="event-data-cell">
+                    <small>{{ evt.event_data[:80] if evt.event_data else '' }}{% if evt.event_data and evt.event_data|length > 80 %}...{% endif %}</small>
+                    <div class="event-data-full" id="detail-{{ evt.id }}">{{ evt.event_data }}</div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -74,7 +115,7 @@
 </div>
 
 <!-- Pagination -->
-<nav>
+<nav class="mt-3">
     <ul class="pagination">
         {% if page > 1 %}
         <li class="page-item">
@@ -83,10 +124,12 @@
         {% endif %}
         {% set total_pages = (total / per_page)|round(0, 'ceil')|int %}
         {% for p in range(1, total_pages + 1) %}
-        {% if p <= 10 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+        {% if p <= 5 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
         <li class="page-item {{ 'active' if p == page }}">
             <a class="page-link" href="?page={{ p }}&session_id={{ session_filter or '' }}&event_type={{ event_type_filter or '' }}">{{ p }}</a>
         </li>
+        {% elif p == 6 or p == page + 3 %}
+        <li class="page-item disabled"><span class="page-link">...</span></li>
         {% endif %}
         {% endfor %}
         {% if page < total_pages %}

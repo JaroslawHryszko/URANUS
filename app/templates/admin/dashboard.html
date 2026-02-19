@@ -3,10 +3,26 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Experiments</h2>
+    <h2 data-bs-toggle="tooltip" data-bs-placement="bottom"
+        title="Main admin view. Here you can see all your experiments, their statistics, and manage them.">
+        Experiments
+    </h2>
     <div>
-        <a href="{{ url_for('admin.experiment_new') }}" class="btn btn-primary">New Experiment</a>
-        <a href="{{ url_for('admin.logout') }}" class="btn btn-outline-secondary ms-2">Logout</a>
+        <a href="{{ url_for('admin.docs') }}" class="btn btn-outline-info"
+           data-bs-toggle="tooltip" data-bs-placement="bottom"
+           title="Open the comprehensive documentation page with step-by-step guides, examples, and tips for using the admin panel.">
+            Documentation
+        </a>
+        <a href="{{ url_for('admin.experiment_new') }}" class="btn btn-primary ms-2"
+           data-bs-toggle="tooltip" data-bs-placement="bottom"
+           title="Create a brand new experiment from scratch. You will configure its name, risks, methods, and texts.">
+            New Experiment
+        </a>
+        <a href="{{ url_for('admin.logout') }}" class="btn btn-outline-secondary ms-2"
+           data-bs-toggle="tooltip" data-bs-placement="bottom"
+           title="Log out of the admin panel. You will need to enter the password again to access it.">
+            Logout
+        </a>
     </div>
 </div>
 
@@ -15,13 +31,13 @@
     <table class="table table-hover">
         <thead class="table-light">
             <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th class="text-center">Participants</th>
-                <th class="text-center">Sessions</th>
-                <th class="text-center">Completed</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th data-bs-toggle="tooltip" title="The name of the experiment as it appears to participants and in reports.">Name</th>
+                <th data-bs-toggle="tooltip" title="Active = participants can access it. Inactive = hidden from participants but data is preserved.">Status</th>
+                <th class="text-center" data-bs-toggle="tooltip" title="How many unique people have started this experiment.">Participants</th>
+                <th class="text-center" data-bs-toggle="tooltip" title="Total number of sessions (one participant may have multiple sessions if they return).">Sessions</th>
+                <th class="text-center" data-bs-toggle="tooltip" title="How many sessions were fully completed (all assigned methods finished).">Completed</th>
+                <th data-bs-toggle="tooltip" title="When this experiment was first created.">Created</th>
+                <th data-bs-toggle="tooltip" title="Available actions for managing this experiment.">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -29,7 +45,12 @@
             <tr>
                 <td>
                     <strong>{{ exp.name }}</strong>
-                    {% if exp.is_template %}<span class="badge bg-info">Template</span>{% endif %}
+                    {% if exp.is_template %}
+                    <span class="badge bg-info" data-bs-toggle="tooltip"
+                          title="This experiment is marked as a template. It can be cloned to create new experiments with the same configuration.">
+                        Template
+                    </span>
+                    {% endif %}
                 </td>
                 <td>
                     {% if exp.is_active %}
@@ -45,26 +66,41 @@
                 <td>
                     <div class="btn-group btn-group-sm">
                         <a href="{{ url_for('admin.experiment_edit', experiment_id=exp.id) }}"
-                           class="btn btn-outline-primary" title="Edit">Edit</a>
+                           class="btn btn-outline-primary"
+                           data-bs-toggle="tooltip" title="Edit experiment settings: name, texts, assignment mode, CSS, etc.">Edit</a>
                         <a href="{{ url_for('admin.risks_manage', experiment_id=exp.id) }}"
-                           class="btn btn-outline-secondary" title="Risks">Risks</a>
+                           class="btn btn-outline-secondary"
+                           data-bs-toggle="tooltip" title="Add, remove, rename or reorder the risks that participants will assess.">Risks</a>
                         <a href="{{ url_for('admin.methods_manage', experiment_id=exp.id) }}"
-                           class="btn btn-outline-secondary" title="Methods">Methods</a>
+                           class="btn btn-outline-secondary"
+                           data-bs-toggle="tooltip" title="Configure which assessment methods (Uranus, Matrix, Ranking, Budget, Categorization) are used and their parameters.">Methods</a>
                         <a href="{{ url_for('admin.results', experiment_id=exp.id) }}"
-                           class="btn btn-outline-info" title="Results">Results</a>
+                           class="btn btn-outline-info"
+                           data-bs-toggle="tooltip" title="View assessment results from all participants. You can also export them as CSV or JSON.">Results</a>
                         <a href="{{ url_for('admin.participants', experiment_id=exp.id) }}"
-                           class="btn btn-outline-info" title="Participants">Users</a>
+                           class="btn btn-outline-info"
+                           data-bs-toggle="tooltip" title="See the list of all participants: their names, demographics, and session status.">Users</a>
                         <a href="{{ url_for('admin.interaction_logs', experiment_id=exp.id) }}"
-                           class="btn btn-outline-info" title="Logs">Logs</a>
+                           class="btn btn-outline-info"
+                           data-bs-toggle="tooltip" title="Browse raw interaction events (clicks, scrolls, hesitations, etc.) captured by the tracker.">Logs</a>
+                        <a href="{{ url_for('admin.analytics', experiment_id=exp.id) }}"
+                           class="btn btn-outline-warning"
+                           data-bs-toggle="tooltip" title="Visual analytics dashboard with charts, session explorer, and behavioral statistics.">Analytics</a>
                     </div>
                     <div class="btn-group btn-group-sm ms-1">
                         <form method="post" action="{{ url_for('admin.experiment_toggle', experiment_id=exp.id) }}" class="d-inline">
-                            <button type="submit" class="btn btn-outline-{{ 'warning' if exp.is_active else 'success' }} btn-sm">
+                            <button type="submit" class="btn btn-outline-{{ 'warning' if exp.is_active else 'success' }} btn-sm"
+                                    data-bs-toggle="tooltip"
+                                    title="{% if exp.is_active %}Deactivate: hide this experiment from participants. No data is lost.{% else %}Activate: make this experiment visible and accessible to participants.{% endif %}">
                                 {{ 'Deactivate' if exp.is_active else 'Activate' }}
                             </button>
                         </form>
                         <form method="post" action="{{ url_for('admin.experiment_clone', experiment_id=exp.id) }}" class="d-inline">
-                            <button type="submit" class="btn btn-outline-secondary btn-sm">Clone</button>
+                            <button type="submit" class="btn btn-outline-secondary btn-sm"
+                                    data-bs-toggle="tooltip"
+                                    title="Create a copy of this experiment with all its risks and methods. The clone starts as inactive and has no participant data.">
+                                Clone
+                            </button>
                         </form>
                     </div>
                 </td>
@@ -74,6 +110,6 @@
     </table>
 </div>
 {% else %}
-<div class="alert alert-info">No experiments yet. Create one to get started.</div>
+<div class="alert alert-info">No experiments yet. Click "New Experiment" above to create one.</div>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,705 @@
+{% extends "base.html" %}
+{% block title %}Documentation — URANUS Admin{% endblock %}
+
+{% block head %}
+<style>
+    .docs-sidebar { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; font-size: 0.85rem; }
+    .docs-sidebar .nav-link { padding: 4px 12px; color: #495057; border-left: 2px solid transparent; }
+    .docs-sidebar .nav-link:hover, .docs-sidebar .nav-link.active { color: #0d6efd; border-left-color: #0d6efd; background: #f8f9fa; }
+    .docs-sidebar .nav-link.sub { padding-left: 24px; font-size: 0.8rem; }
+    .docs-content h2 { border-bottom: 2px solid #0d6efd; padding-bottom: 8px; margin-top: 40px; }
+    .docs-content h3 { margin-top: 28px; color: #495057; }
+    .docs-content h2:first-child { margin-top: 0; }
+    .tip-box { background: #e8f4fd; border-left: 4px solid #0dcaf0; padding: 12px 16px; border-radius: 4px; margin: 12px 0; }
+    .tip-box strong::before { content: "💡 "; }
+    .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; border-radius: 4px; margin: 12px 0; }
+    .warning-box strong::before { content: "⚠️ "; }
+    .funfact-box { background: #f0e6ff; border-left: 4px solid #6f42c1; padding: 12px 16px; border-radius: 4px; margin: 12px 0; }
+    .funfact-box strong::before { content: "🎓 "; }
+    .step-list { counter-reset: step; list-style: none; padding-left: 0; }
+    .step-list li { counter-increment: step; padding: 8px 0 8px 40px; position: relative; border-bottom: 1px solid #f0f0f0; }
+    .step-list li::before {
+        content: counter(step);
+        position: absolute; left: 0; top: 8px;
+        width: 28px; height: 28px; border-radius: 50%;
+        background: #0d6efd; color: white; text-align: center; line-height: 28px;
+        font-weight: 700; font-size: 0.85rem;
+    }
+    .json-example { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; font-family: monospace; font-size: 0.82rem; white-space: pre-wrap; overflow-x: auto; }
+    .method-card-doc { border-left: 4px solid; padding: 16px; margin: 12px 0; background: #fafafa; border-radius: 4px; }
+    .method-card-doc.uranus { border-color: #6f42c1; }
+    .method-card-doc.matrix { border-color: #0d6efd; }
+    .method-card-doc.ranking { border-color: #198754; }
+    .method-card-doc.budget { border-color: #fd7e14; }
+    .method-card-doc.categorization { border-color: #dc3545; }
+    .kbd { background: #eee; border: 1px solid #ccc; border-radius: 3px; padding: 1px 6px; font-size: 0.85em; font-family: monospace; }
+    .screenshot-placeholder { background: #f0f0f0; border: 2px dashed #ccc; padding: 30px; text-align: center; color: #999; border-radius: 8px; margin: 12px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Documentation</h2>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+
+<div class="row">
+    <!-- Sidebar Navigation -->
+    <div class="col-md-3">
+        <nav class="docs-sidebar">
+            <nav class="nav flex-column">
+                <a class="nav-link" href="#overview">Overview</a>
+                <a class="nav-link" href="#quickstart">Quick Start Guide</a>
+                <a class="nav-link sub" href="#qs-create">Create experiment</a>
+                <a class="nav-link sub" href="#qs-risks">Add risks</a>
+                <a class="nav-link sub" href="#qs-methods">Add methods</a>
+                <a class="nav-link sub" href="#qs-activate">Activate & share</a>
+                <a class="nav-link" href="#experiments">Experiments</a>
+                <a class="nav-link sub" href="#exp-editing">Editing</a>
+                <a class="nav-link sub" href="#exp-cloning">Cloning & templates</a>
+                <a class="nav-link sub" href="#exp-modes">Assignment modes</a>
+                <a class="nav-link" href="#risks">Risks</a>
+                <a class="nav-link" href="#methods">Assessment Methods</a>
+                <a class="nav-link sub" href="#m-uranus">Uranus (Pairwise)</a>
+                <a class="nav-link sub" href="#m-matrix">Matrix (FMEA)</a>
+                <a class="nav-link sub" href="#m-ranking">Ranking (Drag&Drop)</a>
+                <a class="nav-link sub" href="#m-budget">Budget Allocation</a>
+                <a class="nav-link sub" href="#m-categorization">Categorization</a>
+                <a class="nav-link sub" href="#m-config">JSON Configuration</a>
+                <a class="nav-link" href="#demographics">Demographics</a>
+                <a class="nav-link" href="#results">Results & Export</a>
+                <a class="nav-link" href="#analytics">Analytics</a>
+                <a class="nav-link sub" href="#a-dashboard">Analytics Dashboard</a>
+                <a class="nav-link sub" href="#a-session">Session Explorer</a>
+                <a class="nav-link sub" href="#a-tracking">What Gets Tracked</a>
+                <a class="nav-link" href="#customcss">Custom CSS</a>
+                <a class="nav-link" href="#iframe">Iframe Embedding</a>
+                <a class="nav-link" href="#tips">Tips & Fun Facts</a>
+            </nav>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9 docs-content">
+
+        <!-- OVERVIEW -->
+        <h2 id="overview">Overview</h2>
+        <p>
+            Welcome to <strong>URANUS</strong> (Universal Risk Assessment Navigational Utility System) — a research platform
+            for studying how different risk assessment methods produce different risk rankings.
+        </p>
+        <p>
+            The core idea is simple: give participants the <strong>same set of risks</strong>, but ask them to evaluate those
+            risks using <strong>different methods</strong> (pairwise comparison, matrix scoring, drag-and-drop ranking, etc.).
+            Then compare the resulting rankings. Do different methods produce the same priority order, or wildly different ones?
+        </p>
+
+        <div class="funfact-box">
+            <strong>Fun fact:</strong> The Uranus pairwise comparison algorithm at the heart of this platform was developed
+            specifically for this research. It uses an adaptive approach — it doesn't ask about every possible pair of risks,
+            but intelligently selects the most informative comparisons based on previous answers.
+        </div>
+
+        <p>As an administrator, you can:</p>
+        <ul>
+            <li>Create <strong>experiments</strong> with custom risks, methods, and texts</li>
+            <li>Choose from <strong>5 assessment methods</strong> (or use all of them)</li>
+            <li>Configure how methods are assigned: fixed order, random, or participant's choice</li>
+            <li>Collect <strong>demographics</strong> data with custom form fields</li>
+            <li>Track every <strong>mouse click, scroll, and hesitation</strong> participants make</li>
+            <li><strong>Export</strong> all data as CSV or JSON for analysis in R, Python, Excel, or SPSS</li>
+        </ul>
+
+        <!-- QUICK START -->
+        <h2 id="quickstart">Quick Start: Your First Experiment in 5 Minutes</h2>
+        <p>Here's the fastest path from zero to a working experiment that participants can access:</p>
+
+        <h3 id="qs-create">Step 1: Create the experiment</h3>
+        <ol class="step-list">
+            <li>From the <strong>Dashboard</strong>, click the blue <strong>New Experiment</strong> button.</li>
+            <li>Enter a <strong>Name</strong> — this is what participants will see. Example: <em>"ERP System Risk Assessment 2026"</em>.</li>
+            <li>Write a <strong>Welcome Text</strong> using the visual editor. This is the first thing participants read. Explain the purpose of the study and what they'll be doing. You can use bold text, lists, and links — no HTML needed!</li>
+            <li>Write <strong>Instructions</strong> — shown after the participant enters their name. Describe the scenario (e.g., "Imagine your university is implementing an ERP system..."), list the risk factors, and define any terms.</li>
+            <li>Under <strong>Settings</strong>, choose an assignment mode (start with <em>Fixed Order</em> — simplest).</li>
+            <li>Click <strong>Create Experiment</strong>.</li>
+        </ol>
+
+        <div class="tip-box">
+            <strong>Tip:</strong> You can always come back and edit the texts later. The visual editor lets you format text
+            with bold, italics, headings, and lists without writing any HTML.
+        </div>
+
+        <h3 id="qs-risks">Step 2: Add risks</h3>
+        <ol class="step-list">
+            <li>After creating the experiment, click <strong>Manage Risks</strong> in the Quick Links sidebar.</li>
+            <li>Add risks one by one using the <strong>Add Risk</strong> form (name + optional description).</li>
+            <li>Or click <strong>Bulk Add Risks</strong> to paste many risks at once — one per line. This is the fastest way!</li>
+            <li>Drag the <strong>☰</strong> handles to reorder risks, then click <strong>Save Order</strong>.</li>
+        </ol>
+
+        <p>Example — paste these into Bulk Add:</p>
+        <div class="json-example">Scope creep and changing requirements
+Budget overrun due to customization costs
+Key personnel turnover during implementation
+Data migration errors and data loss
+Inadequate user training and adoption resistance
+Integration failures with existing systems
+Vendor lock-in and dependency
+Timeline delays from organizational resistance
+Security vulnerabilities in new system
+Business process disruption during transition</div>
+
+        <div class="funfact-box">
+            <strong>Fun fact:</strong> In research on ERP implementations, "inadequate user training" and "scope creep"
+            consistently rank among the top risk factors — but their relative ordering varies significantly depending on
+            which assessment method you use. That's exactly what this platform helps you study!
+        </div>
+
+        <h3 id="qs-methods">Step 3: Add assessment methods</h3>
+        <ol class="step-list">
+            <li>Go back to the experiment and click <strong>Manage Methods</strong>.</li>
+            <li>From the <strong>Type</strong> dropdown, select a method (e.g., start with <em>Pairwise Comparison</em>).</li>
+            <li>Click <strong>Add</strong>. The method appears below with default settings.</li>
+            <li>Add more methods — try <em>Matrix (FMEA)</em> and <em>Ranking (Drag & Drop)</em> for a good comparison.</li>
+            <li>Optionally, write custom <strong>Instructions</strong> for each method using the visual editor.</li>
+        </ol>
+
+        <div class="tip-box">
+            <strong>Tip:</strong> Each method comes with sensible default configuration. You don't need to touch the
+            JSON config unless you want to customize scales, criteria, or categories.
+        </div>
+
+        <h3 id="qs-activate">Step 4: Activate and share</h3>
+        <ol class="step-list">
+            <li>Go back to the experiment edit page.</li>
+            <li>Make sure the <strong>Active</strong> checkbox is checked.</li>
+            <li>Click <strong>Preview Experiment</strong> to test the full flow yourself.</li>
+            <li>Share the experiment URL with participants. The URL format is: <code>/experiment/&lt;id&gt;</code></li>
+        </ol>
+
+        <p>That's it! Participants can now access the experiment, provide their name, read the instructions,
+        and complete all the assessment methods you configured.</p>
+
+        <!-- EXPERIMENTS -->
+        <h2 id="experiments">Managing Experiments</h2>
+
+        <h3 id="exp-editing">Editing an Experiment</h3>
+        <p>Click <strong>Edit</strong> on any experiment to change its settings:</p>
+        <ul>
+            <li><strong>Name & Description</strong> — the name is shown to participants; description is internal only.</li>
+            <li><strong>Welcome Text & Instructions</strong> — use the visual editor (toolbar with bold, lists, links, etc.).</li>
+            <li><strong>Method Assignment Mode</strong> — controls how methods are distributed (see below).</li>
+            <li><strong>Enable Demographics</strong> — whether to show a demographics form before the assessment.</li>
+            <li><strong>Custom CSS</strong> — inject CSS to change colors or fonts for this specific experiment.</li>
+            <li><strong>Active</strong> — only active experiments are visible to participants.</li>
+            <li><strong>Template</strong> — mark as a template for easy cloning.</li>
+        </ul>
+
+        <h3 id="exp-cloning">Cloning & Templates</h3>
+        <p>
+            <strong>Cloning</strong> creates an exact copy of an experiment — including all risks and methods.
+            The clone starts as <em>inactive</em> with no participant data. This is perfect for:
+        </p>
+        <ul>
+            <li>Running the same experiment with a different group (e.g., students vs professionals)</li>
+            <li>Creating a variation with slightly different risks or methods</li>
+            <li>Keeping a "clean" template while experimenting with changes</li>
+        </ul>
+        <p>
+            Mark an experiment as <strong>Template</strong> to give it a special badge on the dashboard.
+            Templates are a visual reminder that this experiment is meant to be cloned, not used directly.
+        </p>
+
+        <h3 id="exp-modes">Method Assignment Modes</h3>
+        <p>This controls how assessment methods are distributed to participants:</p>
+
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Mode</th><th>How it works</th><th>Best for</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Fixed Order</strong></td>
+                    <td>Every participant gets all active methods in the same order (as configured in Manage Methods).</td>
+                    <td>When you want everyone to do the same thing. Simple and controlled.</td>
+                </tr>
+                <tr>
+                    <td><strong>Random</strong></td>
+                    <td>Each participant gets N randomly selected methods in random order. Set N with "Methods per Participant" (0 = all methods, shuffled).</td>
+                    <td>Reducing order effects. If you have 5 methods and set N=3, each participant gets a random subset.</td>
+                </tr>
+                <tr>
+                    <td><strong>Participant Choice</strong></td>
+                    <td>Participants see a list of available methods and choose which ones to complete.</td>
+                    <td>Exploratory studies where you want participants to self-select.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="funfact-box">
+            <strong>Fun fact:</strong> The order in which assessment methods are presented can influence results —
+            this is called the <em>order effect</em> or <em>carryover effect</em>. Random mode helps control for this
+            by ensuring different participants encounter methods in different sequences.
+        </div>
+
+        <!-- RISKS -->
+        <h2 id="risks">Managing Risks</h2>
+        <p>Risks are the items that participants will assess. Each experiment has its own independent set of risks.</p>
+
+        <h3>Adding Risks</h3>
+        <ul>
+            <li><strong>Single add:</strong> Enter a name and optional description, click Add.</li>
+            <li><strong>Bulk add:</strong> Expand "Bulk Add Risks", paste one risk per line, click "Add All". Fastest way to import from a spreadsheet — just copy the column and paste.</li>
+        </ul>
+
+        <h3>Ordering</h3>
+        <p>
+            The order matters — it determines how risks are displayed to participants in methods like Matrix and Categorization.
+            Drag the <strong>☰</strong> handle next to each risk to reorder, then click <strong>Save Order</strong>.
+        </p>
+
+        <div class="tip-box">
+            <strong>Tip:</strong> For the Ranking method, the initial order is what participants see before they start
+            dragging. Consider randomizing the initial order to avoid anchoring bias — or keep it consistent
+            if you want comparable starting points.
+        </div>
+
+        <h3>Editing & Deleting</h3>
+        <p>
+            Each risk has a <strong>Delete</strong> button. Deleting a risk removes it from the experiment —
+            but existing results that reference it will lose the link. If you have active participants,
+            consider deactivating the experiment first.
+        </p>
+
+        <!-- METHODS -->
+        <h2 id="methods">Assessment Methods</h2>
+        <p>URANUS supports 5 different risk assessment methods. Each produces a ranking of risks, but through
+        a fundamentally different cognitive process. This is what makes the comparison interesting!</p>
+
+        <div class="method-card-doc uranus" id="m-uranus">
+            <h3>A: Pairwise Comparison (Uranus Algorithm)</h3>
+            <p>
+                The participant is shown <strong>two risks at a time</strong> and asked: "Which one is more important?"
+                The algorithm adaptively selects which pairs to compare — it doesn't need to ask about every possible pair.
+                After enough comparisons, a complete ranking emerges.
+            </p>
+            <p><strong>How it works for participants:</strong></p>
+            <ul>
+                <li>See two risks side by side</li>
+                <li>Click on the one they consider more important/risky</li>
+                <li>Repeat until the algorithm has enough data (progress bar shows completion)</li>
+                <li>Typically requires fewer comparisons than n*(n-1)/2 thanks to the adaptive algorithm</li>
+            </ul>
+            <p><strong>Produces:</strong> A complete ranking from most to least important risk.</p>
+
+            <div class="funfact-box">
+                <strong>Fun fact:</strong> With 10 risks, the theoretical maximum number of pairwise comparisons is 45
+                (10 choose 2). The Uranus algorithm typically needs significantly fewer — around 20-30 — because it
+                uses transitivity (if A > B and B > C, then A > C) to infer missing comparisons.
+            </div>
+
+            <p><strong>Default config:</strong></p>
+            <div class="json-example">{
+    "parameters": ["importance"]
+}</div>
+            <p>The <code>parameters</code> list defines what aspect participants compare. With multiple parameters
+            (e.g., <code>["probability", "impact"]</code>), participants do separate comparison rounds for each.</p>
+        </div>
+
+        <div class="method-card-doc matrix" id="m-matrix">
+            <h3>B: Matrix / FMEA</h3>
+            <p>
+                A classic risk assessment table. For each risk, the participant assigns scores on
+                <strong>configurable criteria</strong> (default: probability 1-5 and impact 1-5).
+                A priority score is computed by multiplying the criteria values.
+            </p>
+            <p><strong>How it works for participants:</strong></p>
+            <ul>
+                <li>See a table with all risks listed as rows</li>
+                <li>For each risk, select a score on each criterion using dropdowns</li>
+                <li>Submit the entire matrix at once</li>
+            </ul>
+            <p><strong>Produces:</strong> Priority scores (probability × impact) for ranking.</p>
+
+            <p><strong>Default config:</strong></p>
+            <div class="json-example">{
+    "criteria": [
+        {
+            "name": "probability",
+            "min": 1, "max": 5,
+            "labels": {"1": "Very Low", "2": "Low", "3": "Medium", "4": "High", "5": "Very High"}
+        },
+        {
+            "name": "impact",
+            "min": 1, "max": 5,
+            "labels": {"1": "Negligible", "2": "Minor", "3": "Moderate", "4": "Major", "5": "Critical"}
+        }
+    ],
+    "aggregation": "product"
+}</div>
+            <p>You can change <code>aggregation</code> to <code>"weighted_sum"</code> and add <code>"weights"</code>
+            for a weighted average instead of multiplication. You can add more criteria (e.g., detectability for a full FMEA),
+            change the scale (1-10), or customize labels.</p>
+        </div>
+
+        <div class="method-card-doc ranking" id="m-ranking">
+            <h3>C: Ranking (Drag & Drop)</h3>
+            <p>
+                The simplest, most intuitive method. Participants see all risks in a list and
+                <strong>drag them into order</strong> from most important (top) to least important (bottom).
+            </p>
+            <p><strong>How it works for participants:</strong></p>
+            <ul>
+                <li>See all risks in a draggable list</li>
+                <li>Grab a risk and drag it up or down to the desired position</li>
+                <li>Submit when satisfied with the order</li>
+            </ul>
+            <p><strong>Produces:</strong> Direct ranking positions (1st, 2nd, 3rd...).</p>
+
+            <p><strong>Default config:</strong></p>
+            <div class="json-example">{
+    "mode": "overall",
+    "parameters": ["importance"]
+}</div>
+            <p>Set <code>mode</code> to <code>"per_parameter"</code> with multiple parameters to have
+            participants create separate rankings for different aspects (e.g., rank by probability, then rank by impact).</p>
+        </div>
+
+        <div class="method-card-doc budget" id="m-budget">
+            <h3>D: Budget Allocation</h3>
+            <p>
+                Participants receive a fixed number of points (default: 100) and must
+                <strong>distribute them among the risks</strong>. More points = higher perceived risk.
+                The constraint forces trade-offs.
+            </p>
+            <p><strong>How it works for participants:</strong></p>
+            <ul>
+                <li>See all risks with sliders and number inputs</li>
+                <li>Allocate points — the remaining counter updates in real time</li>
+                <li>Must distribute exactly all points (sum must equal total)</li>
+                <li>Submit when all points are allocated</li>
+            </ul>
+            <p><strong>Produces:</strong> Point allocations that can be converted to a ranking.</p>
+
+            <p><strong>Default config:</strong></p>
+            <div class="json-example">{
+    "total_points": 100,
+    "mode": "overall",
+    "parameters": ["importance"]
+}</div>
+            <p>Change <code>total_points</code> to any value. Higher totals (e.g., 1000) give more granularity.
+            Lower totals (e.g., 20) force starker trade-offs.</p>
+
+            <div class="funfact-box">
+                <strong>Fun fact:</strong> Budget allocation is sometimes called the "100-dollar test" in decision-making
+                literature. It forces participants to think about <em>relative</em> importance rather than rating each risk
+                independently — which often produces more differentiated rankings than matrix scoring.
+            </div>
+        </div>
+
+        <div class="method-card-doc categorization" id="m-categorization">
+            <h3>E: Categorization</h3>
+            <p>
+                Participants assign each risk to a <strong>predefined category</strong>
+                (default: Critical / High / Medium / Low / Negligible). Quick and simple.
+            </p>
+            <p><strong>How it works for participants:</strong></p>
+            <ul>
+                <li>See each risk with a dropdown menu of categories</li>
+                <li>Select the appropriate category for each risk</li>
+                <li>Submit all categorizations at once</li>
+            </ul>
+            <p><strong>Produces:</strong> Category assignments that can be mapped to ordinal rankings.</p>
+
+            <p><strong>Default config:</strong></p>
+            <div class="json-example">{
+    "categories": ["Critical", "High", "Medium", "Low", "Negligible"],
+    "mode": "overall",
+    "parameters": ["importance"]
+}</div>
+            <p>Customize the category names and count. For example, use
+            <code>["Must mitigate", "Should mitigate", "Accept"]</code> for a 3-level scale.</p>
+        </div>
+
+        <h3 id="m-config">JSON Configuration Reference</h3>
+        <p>Each method has a <strong>Config (JSON)</strong> field in its edit form. Here are the key options:</p>
+
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Method</th><th>Key</th><th>Description</th><th>Example</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>All</td><td><code>parameters</code></td><td>Aspects to evaluate. Multiple → separate rounds per parameter.</td><td><code>["probability", "impact"]</code></td></tr>
+                <tr><td>All</td><td><code>mode</code></td><td><code>"overall"</code> = one round. <code>"per_parameter"</code> = one round per parameter.</td><td><code>"per_parameter"</code></td></tr>
+                <tr><td>Matrix</td><td><code>criteria</code></td><td>Array of {name, min, max, labels}. Each becomes a column.</td><td>See above</td></tr>
+                <tr><td>Matrix</td><td><code>aggregation</code></td><td><code>"product"</code> or <code>"weighted_sum"</code>.</td><td><code>"product"</code></td></tr>
+                <tr><td>Matrix</td><td><code>weights</code></td><td>Object with criterion→weight for weighted_sum.</td><td><code>{"probability": 0.4, "impact": 0.6}</code></td></tr>
+                <tr><td>Budget</td><td><code>total_points</code></td><td>Total points to distribute.</td><td><code>100</code></td></tr>
+                <tr><td>Categorization</td><td><code>categories</code></td><td>Array of category names (ordered high→low).</td><td><code>["High", "Medium", "Low"]</code></td></tr>
+            </tbody>
+        </table>
+
+        <div class="warning-box">
+            <strong>Warning:</strong> Be careful editing JSON. A misplaced comma or bracket will cause an error.
+            Use a JSON validator (like <a href="https://jsonlint.com" target="_blank">jsonlint.com</a>) if unsure.
+        </div>
+
+        <!-- DEMOGRAPHICS -->
+        <h2 id="demographics">Demographics</h2>
+        <p>
+            When <strong>Enable Demographics</strong> is checked, participants see a form after entering their name.
+            The fields are configured via JSON in the experiment settings.
+        </p>
+        <p><strong>Default fields</strong> collect email and experience level. You can customize them:</p>
+        <div class="json-example">[
+    {"name": "email", "label": "Email Address", "type": "email", "required": false},
+    {"name": "experience", "label": "Years of IT Experience", "type": "select",
+     "options": ["0-2", "3-5", "6-10", "11+"], "required": true},
+    {"name": "role", "label": "Current Role", "type": "text", "required": false},
+    {"name": "department", "label": "Department", "type": "select",
+     "options": ["IT", "Finance", "HR", "Operations", "Management", "Other"], "required": true},
+    {"name": "comments", "label": "Additional Comments", "type": "textarea", "required": false}
+]</div>
+
+        <p><strong>Field types:</strong></p>
+        <ul>
+            <li><code>"text"</code> — single-line text input</li>
+            <li><code>"email"</code> — email input with validation</li>
+            <li><code>"select"</code> — dropdown with predefined options</li>
+            <li><code>"textarea"</code> — multi-line text area</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Tip:</strong> Demographics fields only appear when the checkbox is enabled AND the experiment is
+            saved. After enabling, save the experiment first, then the Demographics Fields JSON section will appear.
+        </div>
+
+        <!-- RESULTS -->
+        <h2 id="results">Results & Export</h2>
+        <p>
+            The <strong>Results</strong> page shows all completed assessments grouped by method and participant.
+            Each card displays the final output of one participant completing one method.
+        </p>
+
+        <h3>Understanding Result Cards</h3>
+        <ul>
+            <li><strong>Uranus:</strong> Shows the final ranking (Rank 1 = highest priority) and the number of comparisons made.</li>
+            <li><strong>Matrix:</strong> Shows criteria values and computed priority scores for each risk.</li>
+            <li><strong>Ranking:</strong> Shows the position assigned to each risk.</li>
+            <li><strong>Budget:</strong> Shows points allocated to each risk.</li>
+            <li><strong>Categorization:</strong> Shows the category assigned to each risk.</li>
+        </ul>
+
+        <h3>Exporting Data</h3>
+        <p>Two export formats are available:</p>
+        <ul>
+            <li><strong>CSV</strong> — one row per risk-assessment. Columns: participant name, UUID, method type, risk name, result data, timestamps. Opens directly in Excel, LibreOffice, or Google Sheets.</li>
+            <li><strong>JSON</strong> — structured data with nested objects. Best for programmatic analysis in Python, R, or JavaScript.</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Tip:</strong> The <code>result_data</code> column in CSV contains JSON. In Python, use
+            <code>pd.json_normalize()</code> to expand it into separate columns. In Excel, use Power Query's
+            JSON parsing feature.
+        </div>
+
+        <!-- ANALYTICS -->
+        <h2 id="analytics">Analytics & Interaction Tracking</h2>
+
+        <h3 id="a-dashboard">Analytics Dashboard</h3>
+        <p>
+            Access via the <strong>Analytics</strong> button on the dashboard or any experiment page.
+            The analytics dashboard provides:
+        </p>
+        <ul>
+            <li><strong>Summary cards:</strong> participants, completed sessions, total events, completion rate</li>
+            <li><strong>Event type chart:</strong> doughnut chart showing which types of interactions were most common</li>
+            <li><strong>Method performance chart:</strong> bar chart comparing average duration, events, and hesitations across methods</li>
+            <li><strong>Method statistics table:</strong> detailed numbers with color-coded hesitation warnings</li>
+            <li><strong>Session explorer table:</strong> click any row to drill into that session</li>
+        </ul>
+
+        <h3 id="a-session">Session Explorer</h3>
+        <p>
+            The Session Explorer is the most powerful analysis tool. It shows <strong>everything that happened</strong>
+            during a single participant's session — and links behavioral data with assessment results.
+        </p>
+
+        <p><strong>What you'll see:</strong></p>
+        <ul>
+            <li><strong>Participant info:</strong> name, email, demographics, UUID</li>
+            <li><strong>Device info:</strong> screen size, browser, language, timezone, iframe status</li>
+            <li><strong>Method sessions with results:</strong> for each method, you see BOTH the behavioral metrics
+                (duration, clicks, hesitations) AND the actual assessment results — side by side. This is the key
+                "linking" feature.</li>
+            <li><strong>Page timeline:</strong> every page the participant visited, with duration and event counts.
+                Pages with hesitations are highlighted in red. Click any event to see its full JSON data.</li>
+            <li><strong>Event filter buttons:</strong> quickly filter the timeline to show only clicks, hesitations, changes, or scrolls</li>
+            <li><strong>Event density chart:</strong> histogram showing when events occurred over time — spikes indicate
+                high activity, flat areas indicate reading or hesitation</li>
+        </ul>
+
+        <div class="funfact-box">
+            <strong>Fun fact:</strong> Research shows that response time and hesitation patterns contain valuable information
+            about decision confidence. A participant who quickly assigns all risks to categories may be less thoughtful than
+            one who hesitates and changes answers. The Session Explorer lets you spot these patterns!
+        </div>
+
+        <h3 id="a-tracking">What Gets Tracked</h3>
+        <p>The JavaScript tracker running on every experiment page captures these events:</p>
+
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Event</th><th>When it fires</th><th>Data captured</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>click</code></td><td>Every mouse click</td><td>x/y coordinates, clicked element</td></tr>
+                <tr><td><code>change</code></td><td>Form input value changes</td><td>New value, element</td></tr>
+                <tr><td><code>keypress</code></td><td>Any key pressed</td><td>Element only (not the key — privacy)</td></tr>
+                <tr><td><code>scroll</code></td><td>Page scrolled (sampled every 500ms)</td><td>Scroll position</td></tr>
+                <tr><td><code>focus</code></td><td>Browser window gains focus</td><td>—</td></tr>
+                <tr><td><code>blur</code></td><td>Browser window loses focus</td><td>—</td></tr>
+                <tr><td><code>visibility_change</code></td><td>Tab switched</td><td>Hidden/visible state</td></tr>
+                <tr><td><code>resize</code></td><td>Window resized</td><td>New dimensions</td></tr>
+                <tr><td><code>form_submit</code></td><td>Form submitted</td><td>Form element</td></tr>
+                <tr><td><code>hesitation</code></td><td>No interaction for &gt;10 seconds</td><td>Duration</td></tr>
+                <tr><td><code>page_load</code></td><td>Page loaded</td><td>Full URL, referrer</td></tr>
+                <tr><td><code>page_unload</code></td><td>Page left</td><td>Time spent on page</td></tr>
+            </tbody>
+        </table>
+
+        <p>Events are <strong>buffered</strong> on the client and sent to the server every 5 seconds,
+        or immediately when the participant leaves the page (using the <code>sendBeacon</code> API for reliability).</p>
+
+        <div class="tip-box">
+            <strong>Tip:</strong> The <strong>hesitation</strong> event is particularly valuable for research.
+            It fires when a participant stops interacting for more than 10 seconds while on an assessment page.
+            High hesitation counts may indicate the method is cognitively demanding, the risks are ambiguous,
+            or the participant is uncertain about their judgment.
+        </div>
+
+        <!-- CUSTOM CSS -->
+        <h2 id="customcss">Custom CSS</h2>
+        <p>
+            Each experiment can have its own CSS injected into the page. This lets you customize the visual appearance
+            without changing the code. The CSS is applied to all participant-facing pages of that experiment.
+        </p>
+        <p><strong>Examples:</strong></p>
+        <div class="json-example">/* Change the primary color */
+.btn-primary { background-color: #28a745; border-color: #28a745; }
+
+/* Make risk names larger */
+.risk-name { font-size: 1.2em; font-weight: bold; }
+
+/* Custom background */
+body { background-color: #f5f0ff; }
+
+/* Hide the navbar for a cleaner look */
+.navbar { display: none; }</div>
+
+        <div class="warning-box">
+            <strong>Warning:</strong> CSS changes affect only participant-facing pages, not the admin panel.
+            Test your CSS by clicking "Preview Experiment" after saving.
+        </div>
+
+        <!-- IFRAME -->
+        <h2 id="iframe">Iframe Embedding</h2>
+        <p>
+            URANUS can be embedded inside other websites using an <code>&lt;iframe&gt;</code>.
+            This is useful for embedding experiments in course management systems, survey platforms,
+            or organizational intranets.
+        </p>
+        <p><strong>Embedding code:</strong></p>
+        <div class="json-example">&lt;iframe
+    src="https://gottlob.frege.ii.uj.edu.pl/experiment/1"
+    style="width: 100%; height: 800px; border: none;"
+    allow="clipboard-write"
+&gt;&lt;/iframe&gt;</div>
+        <p>
+            The system automatically detects iframe embedding and records it in session metadata.
+            Cross-origin cookies are configured with <code>SameSite=None; Secure</code> for compatibility.
+        </p>
+
+        <!-- TIPS -->
+        <h2 id="tips">Tips & Fun Facts</h2>
+
+        <div class="tip-box">
+            <strong>Use tooltips!</strong> Hover over any label, button, or table header in the admin panel
+            to see a tooltip explaining what it does. Every element has one.
+        </div>
+
+        <div class="tip-box">
+            <strong>Clone instead of recreating.</strong> If you want to run a similar experiment for a different
+            group, clone the existing one. All risks and methods are copied — you just change the name and texts.
+        </div>
+
+        <div class="tip-box">
+            <strong>Preview before sharing.</strong> Always click "Preview Experiment" and go through the full
+            flow yourself before sending the link to real participants. Check that instructions are clear,
+            risks are in the right order, and all methods work correctly.
+        </div>
+
+        <div class="tip-box">
+            <strong>Export early, export often.</strong> Download CSV/JSON exports regularly as backups.
+            The data lives in a SQLite database — having external copies is always a good idea.
+        </div>
+
+        <div class="funfact-box">
+            <strong>Why 5 methods?</strong> Each method represents a fundamentally different cognitive approach to
+            risk assessment. Pairwise comparison forces direct trade-offs. Matrix scoring allows independent evaluation.
+            Ranking requires global ordering. Budget allocation introduces scarcity. Categorization uses discrete bins.
+            Research suggests that these different cognitive processes can lead to <em>systematically different</em>
+            risk priorities — which is exactly the hypothesis this platform helps test!
+        </div>
+
+        <div class="funfact-box">
+            <strong>The name URANUS</strong> stands for <em>Universal Risk Assessment Navigational Utility System</em>.
+            The project is developed at the Jagiellonian University in Krakow, Poland —
+            one of the oldest universities in the world (founded 1364).
+            The name "Gottlob" in the subdomain (<code>gottlob.frege.ii.uj.edu.pl</code>) refers to
+            Gottlob Frege, the father of modern logic and a major influence on computer science.
+        </div>
+
+        <div class="funfact-box">
+            <strong>Interaction tracking depth.</strong> This platform records approximately 50-200 interaction events
+            per minute of active use. For a typical session lasting 15-20 minutes across 3 methods, that's
+            1,000-4,000 data points per participant — not counting the assessment results themselves.
+            This rich behavioral data can reveal patterns invisible in the results alone.
+        </div>
+
+        <div class="tip-box">
+            <strong>Analyzing hesitation patterns.</strong> In the Analytics dashboard, look at the "Avg Hesitations"
+            column in the Method Statistics table. If one method consistently produces more hesitations than others,
+            it may be more cognitively demanding. In the Session Explorer, check which specific risks trigger hesitations —
+            these are the risks participants find hardest to evaluate.
+        </div>
+
+        <hr class="my-5">
+        <p class="text-center text-muted">
+            URANUS v3.0 — Jagiellonian University, Institute of Computer Science<br>
+            Questions? Contact the system administrator.
+        </p>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Highlight active sidebar link on scroll
+document.addEventListener('DOMContentLoaded', function() {
+    var sections = document.querySelectorAll('.docs-content h2[id], .docs-content h3[id]');
+    var navLinks = document.querySelectorAll('.docs-sidebar .nav-link');
+    window.addEventListener('scroll', function() {
+        var scrollPos = window.scrollY + 100;
+        sections.forEach(function(section) {
+            if (section.offsetTop <= scrollPos) {
+                navLinks.forEach(function(link) { link.classList.remove('active'); });
+                var activeLink = document.querySelector('.docs-sidebar .nav-link[href="#' + section.id + '"]');
+                if (activeLink) activeLink.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

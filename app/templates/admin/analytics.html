@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Analytics — {{ experiment.name }}{% endblock %}
+
+{% block head %}
+<style>
+    .stat-card { text-align: center; }
+    .stat-card .display-5 { font-weight: 700; }
+    .stat-card .text-muted { font-size: 0.85rem; }
+    .table-clickable tr { cursor: pointer; }
+    .table-clickable tr:hover { background-color: #f0f4ff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 data-bs-toggle="tooltip" data-bs-placement="bottom"
+        title="Interactive analytics dashboard. Combines interaction tracking data with assessment results to give you a full picture of how participants interact with the experiment.">
+        Analytics: {{ experiment.name }}
+    </h2>
+    <div>
+        <a href="{{ url_for('admin.interaction_logs', experiment_id=experiment.id) }}" class="btn btn-outline-secondary btn-sm"
+           data-bs-toggle="tooltip" title="Switch to the raw event log view for detailed event-by-event browsing.">
+            Raw Logs
+        </a>
+        <a href="{{ url_for('admin.experiment_edit', experiment_id=experiment.id) }}" class="btn btn-outline-secondary btn-sm ms-1">Back</a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="display-5 text-primary">{{ total_participants }}</div>
+                <div class="text-muted" data-bs-toggle="tooltip" title="Unique people who started this experiment.">Participants</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="display-5 text-success">{{ completed_sessions }} <small class="fs-5 text-muted">/ {{ total_sessions }}</small></div>
+                <div class="text-muted" data-bs-toggle="tooltip" title="Sessions completed vs total sessions started. A session is 'completed' when the participant finishes all assigned methods.">Sessions Completed</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="display-5 text-info">{{ total_events }}</div>
+                <div class="text-muted" data-bs-toggle="tooltip" title="Total interaction events recorded across all sessions: clicks, scrolls, form changes, hesitations, page loads, etc.">Interaction Events</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                {% set completion_pct = (completed_sessions * 100 / total_sessions)|round(0)|int if total_sessions > 0 else 0 %}
+                <div class="display-5 {% if completion_pct >= 70 %}text-success{% elif completion_pct >= 40 %}text-warning{% else %}text-danger{% endif %}">{{ completion_pct }}%</div>
+                <div class="text-muted" data-bs-toggle="tooltip" title="Percentage of started sessions that were fully completed. Low rates may indicate issues with experiment length or clarity.">Completion Rate</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Event Type Breakdown -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0" data-bs-toggle="tooltip" title="Distribution of interaction event types. Shows which types of events were recorded most frequently across all sessions.">
+                    Event Type Breakdown
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="eventTypeChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Method Performance -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0" data-bs-toggle="tooltip" title="Average time to complete each assessment method and average number of interaction events per method. Helps compare cognitive load across methods.">
+                    Method Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="methodChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Method Stats Table -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0" data-bs-toggle="tooltip" title="Detailed statistics for each assessment method: completions, average duration, events, and hesitations. Higher hesitation counts may indicate the method is more challenging or confusing.">
+            Method Statistics
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th data-bs-toggle="tooltip" title="The assessment method name.">Method</th>
+                    <th data-bs-toggle="tooltip" title="Method type (algorithm).">Type</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="How many participants completed this method vs total assigned.">Completed</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="Average time in seconds to complete this method.">Avg Duration</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="Average number of interaction events per completed session.">Avg Events</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="Average number of hesitation events (>10s inactivity) per session. High values suggest participants found this method difficult.">Avg Hesitations</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ms in method_stats %}
+                <tr>
+                    <td><strong>{{ ms.method.display_name }}</strong></td>
+                    <td><span class="badge bg-info">{{ ms.method.method_type }}</span></td>
+                    <td class="text-center">{{ ms.completed }} / {{ ms.total_sessions }}</td>
+                    <td class="text-center">{{ '%.0f'|format(ms.avg_duration) }}s{% if ms.avg_duration %} <small class="text-muted">({{ '%.1f'|format(ms.avg_duration / 60) }}m)</small>{% endif %}</td>
+                    <td class="text-center">{{ '%.0f'|format(ms.avg_events) }}</td>
+                    <td class="text-center">
+                        {% if ms.avg_hesitations > 2 %}
+                        <span class="text-danger fw-bold">{{ '%.1f'|format(ms.avg_hesitations) }}</span>
+                        {% elif ms.avg_hesitations > 0.5 %}
+                        <span class="text-warning">{{ '%.1f'|format(ms.avg_hesitations) }}</span>
+                        {% else %}
+                        {{ '%.1f'|format(ms.avg_hesitations) }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Session Explorer Table -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0" data-bs-toggle="tooltip" title="All sessions for this experiment. Click any row to open the Session Explorer with a detailed timeline, event breakdown, and linked assessment results.">
+            Session Explorer <small class="text-muted">(click a row to explore)</small>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover table-clickable mb-0" id="sessionTable">
+            <thead class="table-light">
+                <tr>
+                    <th data-bs-toggle="tooltip" title="Session ID.">ID</th>
+                    <th data-bs-toggle="tooltip" title="Name of the participant.">Participant</th>
+                    <th data-bs-toggle="tooltip" title="Whether this session was completed or is still in progress.">Status</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="How many methods were completed out of total assigned in this session.">Methods</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="Total duration of the session.">Duration</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="Total number of interaction events in this session.">Events</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="Number of click events — basic measure of interaction volume.">Clicks</th>
+                    <th class="text-center" data-bs-toggle="tooltip" title="Number of hesitation events (>10s without any interaction). Indicates moments of indecision or confusion.">Hesitations</th>
+                    <th data-bs-toggle="tooltip" title="When this session started.">Started</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ss in session_stats %}
+                <tr onclick="window.location='{{ url_for('admin.session_detail', experiment_id=experiment.id, session_id=ss.session.id) }}'">
+                    <td>{{ ss.session.id }}</td>
+                    <td><strong>{{ ss.participant.name if ss.participant else '?' }}</strong></td>
+                    <td>
+                        <span class="badge bg-{{ 'success' if ss.session.completed_at else 'warning' }}">
+                            {{ 'Completed' if ss.session.completed_at else 'In Progress' }}
+                        </span>
+                    </td>
+                    <td class="text-center">{{ ss.methods_completed }} / {{ ss.methods_total }}</td>
+                    <td class="text-center">
+                        {% if ss.duration_sec %}
+                        {{ '%.0f'|format(ss.duration_sec) }}s
+                        {% if ss.duration_sec >= 60 %}
+                        <small class="text-muted">({{ '%.1f'|format(ss.duration_sec / 60) }}m)</small>
+                        {% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="text-center">{{ ss.event_count }}</td>
+                    <td class="text-center">{{ ss.clicks }}</td>
+                    <td class="text-center">
+                        {% if ss.hesitations > 3 %}
+                        <span class="badge bg-danger">{{ ss.hesitations }}</span>
+                        {% elif ss.hesitations > 0 %}
+                        <span class="badge bg-warning text-dark">{{ ss.hesitations }}</span>
+                        {% else %}
+                        <span class="text-muted">0</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ ss.session.started_at.strftime('%Y-%m-%d %H:%M') if ss.session.started_at else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Event Type Chart
+    var etLabels = {{ event_type_counts | map(attribute=0) | list | tojson }};
+    var etValues = {{ event_type_counts | map(attribute=1) | list | tojson }};
+    var etColors = etLabels.map(function(t) {
+        var map = {click:'#0d6efd', change:'#198754', scroll:'#6c757d', keypress:'#6f42c1',
+                   focus:'#20c997', blur:'#adb5bd', hesitation:'#dc3545', page_load:'#0dcaf0',
+                   page_unload:'#fd7e14', form_submit:'#ffc107', visibility_change:'#d63384', resize:'#6610f2'};
+        return map[t] || '#adb5bd';
+    });
+    new Chart(document.getElementById('eventTypeChart'), {
+        type: 'doughnut',
+        data: { labels: etLabels, datasets: [{ data: etValues, backgroundColor: etColors }] },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } }
+            }
+        }
+    });
+
+    // Method Performance Chart
+    var mLabels = {{ method_stats | map(attribute='method') | map(attribute='display_name') | list | tojson }};
+    var mDurations = {{ method_stats | map(attribute='avg_duration') | list | tojson }};
+    var mEvents = {{ method_stats | map(attribute='avg_events') | list | tojson }};
+    var mHesit = {{ method_stats | map(attribute='avg_hesitations') | list | tojson }};
+    new Chart(document.getElementById('methodChart'), {
+        type: 'bar',
+        data: {
+            labels: mLabels,
+            datasets: [
+                { label: 'Avg Duration (s)', data: mDurations.map(function(v){ return v ? Math.round(v) : 0; }), backgroundColor: '#0d6efd' },
+                { label: 'Avg Events', data: mEvents.map(function(v){ return Math.round(v); }), backgroundColor: '#198754' },
+                { label: 'Avg Hesitations', data: mHesit.map(function(v){ return +v.toFixed(1); }), backgroundColor: '#dc3545' }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+});
+</script>
+{% endblock %}
